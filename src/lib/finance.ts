@@ -67,3 +67,12 @@ export type ExpenseSummary = {
   month: string; expense: string; refunded: string; netExpense: string;
   categories: { id: string; name: string; expense: string; refunded: string; netExpense: string }[];
 };
+
+export type BudgetScope = "DEFAULT" | "MONTH";
+export type BudgetDraft = { categoryId: string; month: string; scope: BudgetScope; amount: string };
+export type BudgetCategory = {
+  id: string; name: string; archived: boolean;
+  amount: string | null; defaultAmount: string | null; overrideAmount: string | null;
+  defaultFrom: string | null; netExpense: string; remaining: string | null;
+};
+export type BudgetReport = { month: string; categories: BudgetCategory[] };
