@@ -109,13 +109,13 @@ export function TransactionsPanel() {
       <section className="min-w-0 rounded-xl border border-slate-200 p-5 sm:p-6" aria-labelledby="entry-heading">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <h2 id="entry-heading" className="text-xl font-semibold">เพิ่มรายการ</h2>
-          <Button onClick={() => setManagingCategories(true)} disabled={saving}>จัดการหมวดหมู่</Button>
+          <Button onClick={() => setManagingCategories(true)} disabled={saving || favoriteBusy}>จัดการหมวดหมู่</Button>
         </div>
         <FavoriteEntries form={form} disabled={saving} onBusy={setFavoriteBusy} onApply={(entry) => {
           form.resetFields();
-          form.setFieldsValue({ type: entry.type, amount: entry.amount, categoryId: entry.category.id, description: entry.description ?? "", date: todayInThailand() });
+          form.setFieldsValue({ type: entry.type, amount: entry.amount, categoryId: entry.category.archived ? undefined : entry.category.id, description: entry.description ?? "", date: todayInThailand() });
           setSaved(false);
-          setSaveError(null);
+          setSaveError(entry.category.archived ? "หมวดของรายการโปรดนี้เก็บแล้ว กรุณาเลือกหมวดที่ยังใช้งานก่อนบันทึก" : null);
           setPrefilled(true);
         }} />
         {prefilled && <Alert className="mb-4" showIcon type="info" title="เติมร่างจากรายการโปรดแล้ว ยังไม่ได้บันทึก กรุณาตรวจวันที่ จำนวนเงิน และรายละเอียด" />}

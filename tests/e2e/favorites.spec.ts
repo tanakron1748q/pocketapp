@@ -240,3 +240,29 @@ test("long favorite names fit narrow screens and a pending selection cannot crea
   expect(await records(context)).toEqual([]);
   await page.screenshot({ path: testInfo.outputPath("favorite-narrow.png"), fullPage: true });
 });
+
+test("archived categories cannot create favorites and stale shortcuts require a new active category before save", async ({ context, page }) => {
+  await authenticate(context, db, users[0].id);
+  const response = await context.request.post("/api/categories", { headers: { Origin: origin }, data: { type: "EXPENSE", name: "กาแฟที่เลิกใช้" } });
+  expect(response.status()).toBe(201);
+  const category = (await response.json()).category;
+  const input = { ...await draft(context), categoryId: category.id, name: "กาแฟเก่า" };
+  expect((await create(context, input)).status()).toBe(201);
+  await page.goto("/dashboard");
+  const shortcut = page.getByRole("button", { name: "ใช้ กาแฟเก่า" });
+  await expect(shortcut).toBeVisible();
+  expect((await context.request.patch(`/api/categories/${category.id}`, { headers: { Origin: origin }, data: { archived: true } })).status()).toBe(200);
+  expect((await create(context, input)).status()).toBe(422);
+  await shortcut.click();
+  await expect(page.getByText("หมวดของรายการโปรดนี้เก็บแล้ว กรุณาเลือกหมวดที่ยังใช้งานก่อนบันทึก", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("จำนวนเงิน (บาท)")).toHaveValue(input.amount);
+  await expect(page.getByText("เลือกหมวดหมู่", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
+  await expect(page.getByText("กรุณาเลือกหมวดหมู่", { exact: true })).toBeVisible();
+  expect(await records(context)).toEqual([]);
+  await page.getByLabel("หมวดหมู่", { exact: true }).click();
+  await page.getByRole("option", { name: "อาหารและเครื่องดื่ม", exact: true }).click();
+  await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
+  await expect(page.getByText("บันทึกรายการแล้ว", { exact: true })).toBeVisible();
+  expect((await records(context))[0].category.name).toBe("อาหารและเครื่องดื่ม");
+});

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { getDb } from "./db";
+import { lockAvailableCategory } from "./categories";
 import { parseSatang, satangToAmount, type FavoriteDraft } from "./finance";
 import { transactionInclude, TransactionRuleError } from "./transactions";
 
@@ -27,16 +28,16 @@ export async function getOwnedFavorite(userId: string, id: string) {
 }
 
 export async function createOwnedFavorite(userId: string, input: FavoriteDraft) {
-  const db = getDb();
-  const category = await db.category.findFirst({
-    where: { id: input.categoryId, userId, type: input.type }, select: { id: true },
-  });
-  if (!category) throw new TransactionRuleError("กรุณาเลือกหมวดหมู่ของคุณที่ตรงกับประเภท", 422, { categoryId: ["หมวดหมู่ไม่ถูกต้อง"] });
-  const record = await db.favoriteEntry.create({
-    data: {
-      userId, name: input.name, type: input.type, categoryId: input.categoryId,
-      amountSatang: parseSatang(input.amount)!, description: input.description || null,
-    }, include: transactionInclude,
+  const record = await getDb().$transaction(async (tx) => {
+    if (!await lockAvailableCategory(tx, userId, input.type, input.categoryId)) {
+      throw new TransactionRuleError("กรุณาเลือกหมวดหมู่ที่ยังใช้งานของคุณและตรงกับประเภท", 422, { categoryId: ["หมวดหมู่ไม่ถูกต้องหรือเก็บแล้ว"] });
+    }
+    return tx.favoriteEntry.create({
+      data: {
+        userId, name: input.name, type: input.type, categoryId: input.categoryId,
+        amountSatang: parseSatang(input.amount)!, description: input.description || null,
+      }, include: transactionInclude,
+    });
   });
   return serializeFavorite(record);
 }
