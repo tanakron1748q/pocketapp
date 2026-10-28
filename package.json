@@ -1,0 +1,47 @@
+{
+  "name": "pocketapp",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:validate": "prisma validate"
+  },
+  "dependencies": {
+    "@ant-design/cssinjs": "^2.1.2",
+    "@ant-design/icons": "^6.3.4",
+    "@ant-design/nextjs-registry": "^1.3.0",
+    "@better-auth/prisma-adapter": "^1.7.14",
+    "@neondatabase/serverless": "^1.2.0",
+    "@prisma/adapter-neon": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "antd": "^6.6.8",
+    "better-auth": "^1.7.14",
+    "dotenv": "^18.0.9",
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "recharts": "^3.10.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.3",
+    "postcss": "^8.5.32",
+    "prisma": "^7.10.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  }
+}
