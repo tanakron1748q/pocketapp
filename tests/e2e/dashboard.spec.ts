@@ -109,3 +109,82 @@ test("dashboard reports reject forged queries and sessions, stay private across 
     expect((await report(context, "2024-02")).recentTransactions.some((t) => t.id === a.source.id)).toBe(false);
   } finally { await other.close(); }
 });
+
+test("browser uses Thai month boundaries, synchronizes budgets, and draws both negative and positive category bars", async ({ context, page }, testInfo) => {
+  await seed(context);
+  await page.clock.setFixedTime(new Date("2024-03-01T00:30:00+07:00"));
+  await page.goto("/dashboard");
+  const overview = page.getByRole("region", { name: "ภาพรวมรายเดือน", exact: true });
+  const budgets = page.getByRole("region", { name: "งบรายเดือน", exact: true });
+  await expect(overview.getByLabel("เดือน (เวลาไทย)")).toHaveValue("2024-03");
+  await expect(budgets.getByLabel("เดือนงบ (เวลาไทย)")).toHaveValue("2024-03");
+  await expect(overview.getByRole("region", { name: "เงินเหลือประจำเดือน", exact: true })).toContainText("0.00 บาท");
+  await expect(overview).toContainText("ยังไม่มีรายจ่ายหรือเงินคืนในเดือนนี้");
+  await expect(overview).toContainText("ยังไม่มีรายการในเดือนนี้");
+  await overview.getByLabel("เดือน (เวลาไทย)").fill("2024-02");
+  await expect(budgets.getByLabel("เดือนงบ (เวลาไทย)")).toHaveValue("2024-02");
+  await expect(overview.getByRole("region", { name: "รายรับประจำเดือน", exact: true })).toContainText("40.03 บาท");
+  await expect(overview.getByRole("region", { name: "รายจ่ายสุทธิรายเดือน", exact: true })).toContainText("รายจ่ายสุทธิ -4.99 บาท");
+  await expect(overview.getByRole("region", { name: "เงินเหลือประจำเดือน", exact: true })).toContainText("45.02 บาท");
+  await expect(overview).toContainText("ไม่ใช่ยอดเงินธนาคารหรือกระเป๋าทั้งหมด");
+  await expect(budgets).toContainText("คงเหลือ 80.01 บาท");
+  const amounts = overview.getByRole("list", { name: "ยอดรายจ่ายสุทธิแต่ละหมวด" });
+  await expect(amounts).toContainText("สุทธิ -30.00 บาท");
+  await expect(amounts).toContainText("สุทธิ 25.01 บาท");
+  const chart = overview.getByRole("img", { name: "กราฟแท่งรายจ่ายสุทธิ ค่าติดลบอยู่ซ้ายศูนย์ ค่าบวกอยู่ขวาศูนย์", exact: true });
+  await expect(chart.locator(".recharts-bar-rectangle")).toHaveCount(2);
+  const categories = (await report(context, "2024-02")).categories;
+  const zero = (await chart.locator(".recharts-reference-line-line").boundingBox())!;
+  for (let i = 0; i < categories.length; i++) {
+    const bar = (await chart.locator(".recharts-bar-rectangle").nth(i).boundingBox())!;
+    expect(bar.width).toBeGreaterThan(0);
+    if (categories[i].netExpense.startsWith("-")) expect(bar.x + bar.width).toBeLessThanOrEqual(zero.x + 1);
+    else expect(bar.x).toBeGreaterThanOrEqual(zero.x - 1);
+  }
+  await expect(overview.getByRole("list", { name: "รายการล่าสุดของเดือน" }).locator("li")).toHaveCount(4);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await overview.screenshot({ path: testInfo.outputPath("dashboard.png") });
+  // Changing the existing budget control also updates the entire overview.
+  await budgets.getByLabel("เดือนงบ (เวลาไทย)").fill("2024-01");
+  await expect(overview.getByLabel("เดือน (เวลาไทย)")).toHaveValue("2024-01");
+  await expect(overview.getByRole("region", { name: "เงินเหลือประจำเดือน", exact: true })).toContainText("-99.95 บาท");
+  await expect(budgets).toContainText("ใช้เกินงบ 50.24 บาท");
+});
+
+test("browser refreshes the selected report after entries, recovers from report failures and clears data on account change", async ({ context, page }) => {
+  const a = await seed(context);
+  let fail = true;
+  await page.route("**/api/dashboard?**", (route) => fail
+    ? route.fulfill({ status: 503, json: { error: "โหลดภาพรวมไม่สำเร็จ" } }) : route.continue());
+  await page.goto("/dashboard");
+  const overview = page.getByRole("region", { name: "ภาพรวมรายเดือน", exact: true });
+  await expect(overview.getByRole("alert")).toContainText("โหลดภาพรวมไม่สำเร็จ");
+  await expect(overview.getByRole("region", { name: "เงินเหลือประจำเดือน", exact: true })).toHaveCount(0);
+  fail = false;
+  await overview.getByRole("button", { name: "ลองโหลดภาพรวมอีกครั้ง" }).click();
+  await overview.getByLabel("เดือน (เวลาไทย)").fill("2024-02");
+  await expect(overview).toContainText("รายจ่ายสุทธิ -4.99 บาท");
+  await page.getByLabel("จำนวนเงิน (บาท)", { exact: true }).fill("0.01");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2024-02-29");
+  await page.getByLabel("หมวดหมู่", { exact: true }).click();
+  await page.getByRole("option", { name: a.expense[0].name, exact: true }).click();
+  await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
+  await expect(overview).toContainText("รายจ่ายสุทธิ -4.98 บาท");
+  await expect(overview.getByRole("region", { name: "เงินเหลือประจำเดือน", exact: true })).toContainText("45.01 บาท");
+  await expect(page.getByRole("region", { name: "งบรายเดือน", exact: true })).toContainText("คงเหลือ 80.00 บาท");
+  await expect(overview.getByRole("list", { name: "รายการล่าสุดของเดือน" }).locator("li")).toHaveCount(5);
+  // Failure in a newly selected month never presents the previous month's totals as current.
+  fail = true;
+  await overview.getByLabel("เดือน (เวลาไทย)").fill("2024-01");
+  await expect(overview.getByRole("alert")).toBeVisible();
+  await expect(overview.getByRole("region", { name: "เงินเหลือประจำเดือน", exact: true })).toHaveCount(0);
+  fail = false;
+  await overview.getByRole("button", { name: "ลองโหลดภาพรวมอีกครั้ง" }).click();
+  await expect(overview).toContainText("รายจ่ายสุทธิ 100.25 บาท");
+  await authenticate(context, db, users[1]);
+  await page.reload();
+  await overview.getByLabel("เดือน (เวลาไทย)").fill("2024-02");
+  await expect(overview).toContainText("รายจ่ายสุทธิ 0.00 บาท");
+  await expect(overview.getByRole("list", { name: "รายการล่าสุดของเดือน" })).toHaveCount(0);
+  await expect(overview).not.toContainText(a.expense[0].name);
+});

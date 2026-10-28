@@ -16,8 +16,7 @@ import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
 import { RefundManager } from "./refund-manager";
-import { ExpenseSummaryPanel } from "./expense-summary-panel";
-import { BudgetsPanel } from "./budgets-panel";
+import { DashboardPanel } from "./dashboard-panel";
 import { CategoryManager } from "./category-manager";
 
 export function TransactionsPanel() {
@@ -122,8 +121,7 @@ export function TransactionsPanel() {
 
   return (
     <>
-    <ExpenseSummaryPanel revision={summaryRevision} />
-    <BudgetsPanel revision={summaryRevision} />
+    <DashboardPanel revision={summaryRevision} />
     <div className="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <section className="min-w-0 rounded-xl border border-slate-200 p-5 sm:p-6" aria-labelledby="entry-heading">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Alert, Button, Form, Input, Modal, Radio } from "antd";
-import { displayAmount, todayInThailand, type BudgetCategory, type BudgetDraft, type BudgetReport } from "@/lib/finance";
+import { displayAmount, type BudgetCategory, type BudgetDraft, type BudgetReport } from "@/lib/finance";
 import { BUDGET_AMOUNT_ERROR, parseBudgetSatang } from "@/lib/budget-schema";
 import { readJson, RequestError } from "@/lib/private-request";
 
@@ -49,8 +49,7 @@ function BudgetEditor({ category, month, onClose, onSaved }: {
   </Modal>;
 }
 
-export function BudgetsPanel({ revision }: { revision: number }) {
-  const [month, setMonth] = useState(() => todayInThailand().slice(0, 7));
+export function BudgetsPanel({ revision, month, onMonthChange }: { revision: number; month: string; onMonthChange: (month: string) => void }) {
   const [data, setData] = useState<BudgetReport | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -67,7 +66,7 @@ export function BudgetsPanel({ revision }: { revision: number }) {
     <h2 className="mb-3 text-xl font-semibold">งบรายเดือน</h2>
     <label htmlFor="budget-month">เดือนงบ (เวลาไทย)</label>
     <Input id="budget-month" className="mt-2" type="month" value={month} disabled={Boolean(editor)} onChange={(event) => {
-      if (event.target.value) { setMonth(event.target.value); setNotice(false); }
+      if (event.target.value) { onMonthChange(event.target.value); setNotice(false); }
     }} />
     <p className="my-3 text-sm text-slate-600">ใช้ไปเท่ากับรายจ่ายสุทธิ รวมเงินคืนในเดือนที่ได้รับ งบเหลือไม่ทบข้ามเดือน ใช้เกินงบยังบันทึกรายจ่ายต่อได้</p>
     {notice && <Alert className="mb-3" showIcon type="success" title="บันทึกงบแล้ว" />}

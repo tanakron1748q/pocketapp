@@ -35,3 +35,5 @@ Migration `20261029010000_monthly_budgets` เพิ่มตาราง `budge
 `pnpm test:e2e budgets.spec.ts` ทดสอบ browser/HTTP บน desktop และ mobile ด้วย PostgreSQL แยก: ค่าตั้งต้นข้ามปี override งบศูนย์ ไม่ทบยอด เงินคืนข้ามเดือน หมวดแก้ไข/เก็บแล้ว งบติดลบและการบันทึกต่อ persistence ข้ามอุปกรณ์ validation สิทธิ์สองบัญชี retry และร่างที่คงอยู่เมื่อบันทึกล้มเหลว
 
 การทดสอบอัตโนมัติใช้ session fixtures เดิมของโปรเจกต์ การตรวจจริงกับ Google/Neon/Vercel ยังต้องตั้งค่า credentials ตาม [auth-setup.md](auth-setup.md)
+
+ตัวเลือกเดือนงบเชื่อมกับตัวเลือกเดือนใน [ภาพรวมรายเดือน](dashboard.md) เปลี่ยนจากจุดใดก็ได้เพื่อดูภาพรวมและงบของเดือนเดียวกัน
