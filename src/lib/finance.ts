@@ -83,4 +83,17 @@ export type DashboardReport = ExpenseSummary & {
   income: string;
   monthlyNet: string;
   recentTransactions: Transaction[];
+  comparison: MonthComparison | null;
+};
+
+export type PeriodTotals = {
+  income: string; expense: string; refunded: string; netExpense: string; monthlyNet: string;
+};
+export type ComparisonPeriod = PeriodTotals & { startDate: string; endDate: string };
+export type MonthComparison = {
+  mode: "elapsed" | "full";
+  asOfDate: string;
+  current: ComparisonPeriod;
+  previous: ComparisonPeriod;
+  change: Pick<PeriodTotals, "income" | "netExpense" | "monthlyNet">;
 };

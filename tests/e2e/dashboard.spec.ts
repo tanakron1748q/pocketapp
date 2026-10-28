@@ -55,7 +55,7 @@ test.afterAll(async () => { await db.$disconnect(); });
 test("HTTP defaults to the Thai month and returns zeroes and no recent records for an empty month", async ({ context }) => {
   await authenticate(context, db, users[0]);
   const today = new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 7);
-  expect(await report(context)).toEqual({ month: today, income: "0.00", expense: "0.00", refunded: "0.00", netExpense: "0.00", monthlyNet: "0.00", categories: [], recentTransactions: [] });
+  expect(await report(context)).toMatchObject({ month: today, income: "0.00", expense: "0.00", refunded: "0.00", netExpense: "0.00", monthlyNet: "0.00", categories: [], recentTransactions: [] });
   expect(await report(context, "2024-02")).toMatchObject({ month: "2024-02", monthlyNet: "0.00", categories: [], recentTransactions: [] });
 });
 
