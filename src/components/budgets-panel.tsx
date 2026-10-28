@@ -27,7 +27,7 @@ function BudgetEditor({ category, month, onClose, onSaved }: {
     } finally { setSaving(false); }
   }
   return <Modal open title="ตั้งงบหมวดรายจ่าย" onCancel={onClose} onOk={() => form.submit()} okText="บันทึกงบ" cancelText="ยกเลิก"
-    confirmLoading={saving} okButtonProps={{ disabled: saving }} cancelButtonProps={{ disabled: saving }}
+    confirmLoading={saving} okButtonProps={{ disabled: saving, "aria-label": "บันทึกงบ" }} cancelButtonProps={{ disabled: saving }}
     closable={!saving} keyboard={!saving} mask={{ closable: !saving }}>
     <p className="mb-3 break-words [overflow-wrap:anywhere]">{category.name} · {month}</p>
     {error && <Alert className="mb-3" showIcon type="error" title={error} />}
