@@ -253,8 +253,8 @@ test("initial load error offers retry instead of claiming the account is empty",
   });
   await page.goto("/dashboard");
   await expect(page.getByText("โหลดข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง", { exact: true })).toBeVisible();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toHaveCount(0);
   fail = false;
   await page.getByRole("button", { name: "ลองโหลดอีกครั้ง", exact: true }).click();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
 });
