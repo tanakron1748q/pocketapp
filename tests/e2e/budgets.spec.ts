@@ -112,3 +112,86 @@ test("HTTP rejects foreign categories, ownership injection, invalid inputs, miss
     expect((await report(context, "2024-01")).categories.find((c) => c.id === category.id)).toMatchObject({ amount: "99.99" });
   } finally { await other.close(); await guest.close(); }
 });
+
+test("browser saves defaults and overrides, displays refund usage and permits entries after overspending", async ({ context, page }, testInfo) => {
+  const { category } = await setup(context);
+  const expense = await entry(context, category.id, "100.25", "2024-01-31");
+  await context.request.post(`/api/transactions/${expense.id}/refunds`, { headers, data: { amount: "40.01", date: "2024-02-29" } });
+  await page.goto("/dashboard");
+  const panel = page.getByRole("region", { name: "งบรายเดือน", exact: true });
+  const card = panel.getByRole("listitem").filter({ has: page.getByRole("heading", { name: category.name, exact: true }) });
+  const dialog = page.getByRole("dialog", { name: "ตั้งงบหมวดรายจ่าย", exact: true });
+  const today = (await (await context.request.get("/api/categories")).json()).today;
+  await expect(panel.getByLabel("เดือนงบ (เวลาไทย)")).toHaveValue(today.slice(0, 7));
+  await panel.getByLabel("เดือนงบ (เวลาไทย)").fill("2024-01");
+  await expect(card).toContainText("ยังไม่ได้ตั้งงบ");
+  await card.getByRole("button", { name: "ตั้งงบ", exact: true }).click();
+  await dialog.getByRole("radio", { name: "ค่าตั้งต้นตั้งแต่เดือนนี้เป็นต้นไป", exact: true }).check();
+  await dialog.getByLabel("งบ (บาท)").fill("50.01");
+  await dialog.getByRole("button", { name: "บันทึกงบ", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(card).toContainText("ใช้เกินงบ 50.24 บาท");
+  await page.getByLabel("จำนวนเงิน (บาท)", { exact: true }).fill("0.01");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2024-01-31");
+  await page.getByLabel("หมวดหมู่", { exact: true }).click();
+  await page.getByRole("option", { name: category.name, exact: true }).click();
+  await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
+  await expect(card).toContainText("ใช้เกินงบ 50.25 บาท");
+  await panel.getByLabel("เดือนงบ (เวลาไทย)").fill("2024-02");
+  await expect(card).toContainText("ใช้ไปสุทธิ -40.01 บาท");
+  await expect(card).toContainText("คงเหลือ 90.02 บาท");
+  await card.getByRole("button", { name: "ตั้งงบ", exact: true }).click();
+  await dialog.getByLabel("งบ (บาท)").fill("10.00");
+  await dialog.getByRole("button", { name: "บันทึกงบ", exact: true }).click();
+  await expect(card).toContainText("ปรับเฉพาะเดือนนี้");
+  await expect(card).toContainText("คงเหลือ 50.01 บาท");
+  await panel.getByLabel("เดือนงบ (เวลาไทย)").fill("2024-03");
+  await expect(card).toContainText("คงเหลือ 50.01 บาท");
+  await expect(card).toContainText("ค่าตั้งต้นตั้งแต่ 2024-01");
+  await page.reload();
+  await panel.getByLabel("เดือนงบ (เวลาไทย)").fill("2024-02");
+  await expect(card).toContainText("ปรับเฉพาะเดือนนี้");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await panel.screenshot({ path: testInfo.outputPath("budgets.png") });
+});
+
+test("browser retries loading, validates amounts, preserves failed drafts and prevents duplicate saves", async ({ context, page }) => {
+  const { category } = await setup(context);
+  let failLoad = true;
+  let failSave = true;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  await page.route("**/api/budgets**", async (route) => {
+    if (route.request().method() === "GET" && failLoad) return route.fulfill({ status: 503, json: { error: "โหลดงบไม่สำเร็จ" } });
+    if (route.request().method() === "PUT") {
+      if (failSave) return route.fulfill({ status: 503, json: { error: "บันทึกงบไม่สำเร็จ" } });
+      await gate;
+    }
+    return route.continue();
+  });
+  await page.goto("/dashboard");
+  const panel = page.getByRole("region", { name: "งบรายเดือน", exact: true });
+  await expect(panel.getByRole("alert")).toContainText("โหลดงบไม่สำเร็จ");
+  failLoad = false;
+  await panel.getByRole("button", { name: "ลองโหลดงบอีกครั้ง" }).click();
+  const card = panel.getByRole("listitem").filter({ has: page.getByRole("heading", { name: category.name, exact: true }) });
+  await card.getByRole("button", { name: "ตั้งงบ", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "ตั้งงบหมวดรายจ่าย", exact: true });
+  for (const amount of ["-1", "0.001", "21474836.48"]) {
+    await dialog.getByLabel("งบ (บาท)").fill(amount);
+    await dialog.getByRole("button", { name: "บันทึกงบ", exact: true }).click();
+    await expect(dialog).toContainText("ทศนิยมไม่เกิน 2 ตำแหน่ง");
+  }
+  await dialog.getByLabel("งบ (บาท)").fill("0");
+  await dialog.getByRole("button", { name: "บันทึกงบ", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("บันทึกงบไม่สำเร็จ");
+  await expect(dialog.getByLabel("งบ (บาท)")).toHaveValue("0");
+  failSave = false;
+  await dialog.getByRole("button", { name: "บันทึกงบ", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: /บันทึกงบ/ })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "ยกเลิก", exact: true })).toBeDisabled();
+  release();
+  await expect(dialog).toHaveCount(0);
+  await expect(card).toContainText("งบ 0.00 บาท");
+  await expect(card).toContainText("คงเหลือ 0.00 บาท");
+});

@@ -58,3 +58,5 @@ Spec สำหรับพัฒนา: [Pocketapp v1 — Issue #1](https://gith
 การเพิ่ม เปลี่ยนชื่อ และเก็บหมวดหมู่: [docs/categories.md](docs/categories.md)
 
 การบันทึก แก้ไข และลบเงินคืนจากรายจ่าย พร้อมรายจ่ายสุทธิในเดือนที่ได้รับจริง: [docs/refunds.md](docs/refunds.md)
+
+การตั้งงบรายเดือน ค่าตั้งต้นต่อเดือนถัดไป การปรับเฉพาะเดือน และงบคงเหลือจากรายจ่ายสุทธิ: [docs/budgets.md](docs/budgets.md)
