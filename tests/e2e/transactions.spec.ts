@@ -167,7 +167,7 @@ test("browser adds expense/income, clears mismatched category, reloads and shows
   await authenticate(context, db, users[0].id);
   const today = (await (await context.request.get("/api/categories")).json()).today;
   await page.goto("/dashboard");
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
   await expect(page.getByLabel("วันที่ (เวลาไทย)")).toHaveValue(today);
   await fillExpense(page, "123.45", "ข้าวกลางวัน 🍚");
   await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
@@ -253,8 +253,8 @@ test("initial load error offers retry instead of claiming the account is empty",
   });
   await page.goto("/dashboard");
   await expect(page.getByText("โหลดข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง", { exact: true })).toBeVisible();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toHaveCount(0);
   fail = false;
   await page.getByRole("button", { name: "ลองโหลดอีกครั้ง", exact: true }).click();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
 });

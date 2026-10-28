@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { Alert, Button, Form, Spin } from "antd";
 import {
-  displayAmount, displayDate,
+  displayAmount, displayDate, todayInThailand,
   type Category, type Transaction, type TransactionDraft, type TransactionPage,
 } from "@/lib/finance";
 
 import { applyFieldErrors, readJson, RequestError } from "@/lib/private-request";
+import { FavoriteEntries } from "./favorite-entries";
 import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
@@ -22,6 +23,8 @@ export function TransactionsPanel() {
   const [initialError, setInitialError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [listLoading, setListLoading] = useState(false);
@@ -83,6 +86,7 @@ export function TransactionsPanel() {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values),
       });
       setSaved(true);
+      setPrefilled(false);
       form.setFieldsValue({ amount: "", description: "" });
       // A refresh failure must not turn a successful save into a retryable submission.
       await loadPage();
@@ -107,15 +111,30 @@ export function TransactionsPanel() {
           <h2 id="entry-heading" className="text-xl font-semibold">เพิ่มรายการ</h2>
           <Button onClick={() => setManagingCategories(true)} disabled={saving}>จัดการหมวดหมู่</Button>
         </div>
+        <FavoriteEntries form={form} disabled={saving} onBusy={setFavoriteBusy} onApply={(entry) => {
+          form.resetFields();
+          form.setFieldsValue({ type: entry.type, amount: entry.amount, categoryId: entry.category.id, description: entry.description ?? "", date: todayInThailand() });
+          setSaved(false);
+          setSaveError(null);
+          setPrefilled(true);
+        }} />
+        {prefilled && <Alert className="mb-4" showIcon type="info" title="เติมร่างจากรายการโปรดแล้ว ยังไม่ได้บันทึก กรุณาตรวจวันที่ จำนวนเงิน และรายละเอียด" />}
         {saved && <Alert className="mb-4" showIcon type="success" title="บันทึกรายการแล้ว" />}
         {saveError && <Alert className="mb-4" showIcon type="error" title={saveError} />}
-        <Form form={form} name="transaction" layout="vertical" onFinish={save} disabled={saving} noValidate
+        <Form form={form} name="transaction" layout="vertical" onFinish={save} disabled={saving || favoriteBusy} noValidate
           onValuesChange={(changed) => {
             setSaved(false);
             if ("type" in changed) form.setFieldsValue({ categoryId: undefined });
           }}>
           <TransactionFields categories={categories} />
-          <Button type="primary" htmlType="submit" loading={saving} block size="large">{saving ? "กำลังบันทึก…" : "บันทึกรายการ"}</Button>
+          <Button type="primary" htmlType="submit" loading={saving} disabled={saving || favoriteBusy} block size="large">{saving ? "กำลังบันทึก…" : "บันทึกรายการ"}</Button>
+          <Button className="mt-3" block disabled={saving || favoriteBusy} onClick={() => {
+            form.resetFields();
+            form.setFieldsValue({ type: "EXPENSE", date: todayInThailand() });
+            setPrefilled(false);
+            setSaveError(null);
+            setSaved(false);
+          }}>ยกเลิกร่าง</Button>
         </Form>
       </section>
       <section className="min-w-0" aria-labelledby="history-heading" aria-busy={listLoading}>

@@ -245,7 +245,7 @@ test("canceling delete sends no request and confirming removes the record after 
   await expect(history(page).locator("li")).toHaveCount(0);
   expect((await context.request.get(url)).status()).toBe(404);
   await page.reload();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
 });
 
 test("failed edit/delete retains the record and draft; pending actions prevent repeated submissions", async ({ context, page }) => {

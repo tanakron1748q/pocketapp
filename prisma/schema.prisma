@@ -19,6 +19,7 @@ model User {
   accounts      Account[]
   categories    Category[]
   transactions  Transaction[]
+  favoriteEntries FavoriteEntry[]
 
   @@map("users")
 }
@@ -86,6 +87,7 @@ model Category {
   archived     Boolean         @default(false)
   createdAt    DateTime        @default(now()) @db.Timestamptz(3)
   transactions Transaction[]
+  favoriteEntries FavoriteEntry[]
 
   @@unique([userId, starterKey])
   // Composite identity lets the FK enforce both ownership and transaction type.
@@ -109,4 +111,22 @@ model Transaction {
   @@index([userId, date(sort: Desc), createdAt(sort: Desc), id(sort: Desc)])
   @@index([categoryId, userId, type])
   @@map("transactions")
+}
+
+// A reusable draft deliberately has no business date or Transaction reference.
+model FavoriteEntry {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  type         TransactionType
+  amountSatang Int
+  description  String?
+  categoryId   String
+  category     Category        @relation(fields: [categoryId, userId, type], references: [id, userId, type], onDelete: NoAction, onUpdate: NoAction)
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([categoryId, userId, type])
+  @@map("favorite_entries")
 }
