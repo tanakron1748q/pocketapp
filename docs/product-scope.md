@@ -68,13 +68,19 @@
 - ผู้ใช้ยืนยันใช้ frontend ตามข้อเสนอจากการวิเคราะห์: Next.js 16 App Router, React, TypeScript, Ant Design, Tailwind CSS สำหรับ layout/responsive, Recharts และ pnpm
 - ใช้ AntD Form จัดการฟอร์ม และ Zod ตรวจข้อมูลฝั่ง server ตามข้อเสนอที่ลดส่วนซ้ำ ยังไม่เพิ่ม React Hook Form ในชุดเริ่มต้น
 - ใช้ไอคอนชุดหลักเดียว โดยข้อเสนอเริ่มต้นคือ Ant Design Icons
-- การเลือก vinext หรือ toolchain สำหรับ deploy เป็นประเด็นของ hosting ที่ยังต้องตัดสินใจแยกจากส่วนหน้าจอ
+- ใช้ Next.js บน Vercel โดยตรงตามข้อตกลง cloud ล่าสุด ไม่จำเป็นต้องเพิ่ม vinext
 
-## ความต้องการฐานข้อมูลล่าสุดและเรื่องที่ยังหารือ
+## ข้อตกลงฐานข้อมูลและ cloud
 
-- ผู้ใช้ต้องการ Prisma ORM และระบุฐานข้อมูลว่า “postgrest”; การประเมิน hosting รอบนี้ตีความเบื้องต้นว่าหมายถึง PostgreSQL ซึ่งต่างจาก PostgREST ที่เป็นระบบสร้าง HTTP API บน PostgreSQL
+- ผู้ใช้ยืนยันชุดที่แนะนำ: PostgreSQL บน Neon Free, Prisma ORM 7, Better Auth พร้อม Prisma adapter และ Google Login, โฮสต์ Next.js บน Vercel Hobby โดยใช้ Node.js runtime
 - D1 + Drizzle ในเอกสารวิเคราะห์ก่อนหน้าเป็นข้อเสนอเดิม ไม่ใช่ stack ฐานข้อมูลที่ยืนยันแล้ว
-- ยังไม่ยืนยันผู้ให้บริการฐานข้อมูล, hosting และการเลือกไลบรารียืนยันตัวตน
 - การออกแบบระบบและการนำขึ้นใช้งานต้องอยู่ภายใต้ข้อจำกัดใช้บริการฟรีทั้งหมดและผู้ใช้กลุ่มเล็ก
+- ติดตั้งโครงโปรเจกต์และ dependencies แล้ว ยังไม่มี model ข้อมูลธุรกิจ, migrations, Google Login หรือฟีเจอร์การเงิน และยังไม่ได้เชื่อม Neon/Vercel จริง
 
-สถานะ: ยืนยันขอบเขตฟีเจอร์และแนวทาง frontend แล้ว อยู่ระหว่างหารือฐานข้อมูลและ hosting ยังไม่ได้เริ่มพัฒนา
+## Spec สำหรับนำไปพัฒนา
+
+- เผยแพร่ [Pocketapp v1 — GitHub issue #1](https://github.com/tanakron1748q/pocketapp/issues/1) พร้อม label ready-for-agent
+- ร่าง spec ใน repository: [specs/pocketapp-v1.md](./specs/pocketapp-v1.md)
+- ผู้ใช้ยืนยันการทดสอบผ่านขอบเขตแอปจริงด้วย browser และ HTTP requests โดยใช้ PostgreSQL ทดสอบแยก ครอบคลุมสิทธิ์ข้อมูลและเงินคืนพร้อมกัน
+
+สถานะ: ยืนยันขอบเขตฟีเจอร์และ stack แล้ว โครงโปรเจกต์ถูก push แล้วที่ commit 82b118f ฟีเจอร์จริงพร้อมให้เริ่มพัฒนาตาม spec
