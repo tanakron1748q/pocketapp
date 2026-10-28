@@ -54,7 +54,7 @@ export async function editOwnedTransaction(userId: string, id: string, input: Ed
       include: transactionInclude,
     });
     return serializeTransaction(updated);
-  });
+  }, { isolationLevel: "ReadCommitted" });
 }
 
 export async function deleteOwnedTransaction(userId: string, id: string) {
@@ -64,5 +64,5 @@ export async function deleteOwnedTransaction(userId: string, id: string) {
       throw new TransactionRuleError("กรุณาลบเงินคืนทั้งหมดก่อนลบรายจ่ายต้นทาง", 422);
     }
     await tx.transaction.delete({ where: { id, userId } });
-  });
+  }, { isolationLevel: "ReadCommitted" });
 }

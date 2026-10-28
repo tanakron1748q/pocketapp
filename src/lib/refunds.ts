@@ -51,5 +51,5 @@ export async function writeRefund(userId: string, expenseId: string, refundId: s
       ? await tx.refund.update({ where: { id: refundId, userId, expenseId }, data })
       : await tx.refund.create({ data: { ...data, userId, expenseId } });
     return serialize(record);
-  });
+  }, { isolationLevel: "ReadCommitted" });
 }
