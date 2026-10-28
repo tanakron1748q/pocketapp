@@ -8,12 +8,14 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:validate": "prisma validate"
+    "db:validate": "prisma validate",
+    "db:migrate": "prisma migrate deploy",
+    "test:e2e": "node scripts/test-e2e.mjs"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^2.1.2",
@@ -22,6 +24,7 @@
     "@better-auth/prisma-adapter": "^1.7.14",
     "@neondatabase/serverless": "^1.2.0",
     "@prisma/adapter-neon": "^7.10.1",
+    "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "^7.10.1",
     "antd": "^6.6.8",
     "better-auth": "^1.7.14",
@@ -33,6 +36,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
@@ -43,5 +47,6 @@
     "prisma": "^7.10.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
-  }
+  },
+  "type": "module"
 }
