@@ -78,3 +78,9 @@ export type BudgetCategory = {
   defaultFrom: string | null; netExpense: string; remaining: string | null;
 };
 export type BudgetReport = { month: string; categories: BudgetCategory[] };
+
+export type DashboardReport = ExpenseSummary & {
+  income: string;
+  monthlyNet: string;
+  recentTransactions: Transaction[];
+};

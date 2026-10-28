@@ -1,15 +1,16 @@
 import "server-only";
 
+import type { Prisma } from "@/generated/prisma/client";
 import { getDb } from "./db";
 import { satangToAmount, type ExpenseSummary } from "./finance";
 
-export async function expenseSummary(userId: string, month: string): Promise<ExpenseSummary> {
+export async function expenseSummary(userId: string, month: string, db: Prisma.TransactionClient = getDb()): Promise<ExpenseSummary> {
   const start = new Date(`${month}-01T00:00:00.000Z`);
   const end = new Date(start);
   end.setUTCMonth(end.getUTCMonth() + 1);
   // One statement gives a consistent snapshot. Refund category follows its original
   // expense even when that expense is edited or the category is renamed/archived.
-  const rows = await getDb().$queryRaw<{ id: string; name: string; expense: bigint; refunded: bigint }[]>`
+  const rows = await db.$queryRaw<{ id: string; name: string; expense: bigint; refunded: bigint }[]>`
     WITH entries AS (
       SELECT "categoryId", "amountSatang"::bigint AS expense, 0::bigint AS refunded
       FROM transactions WHERE "userId" = ${userId} AND type = 'EXPENSE' AND date >= ${start} AND date < ${end}
