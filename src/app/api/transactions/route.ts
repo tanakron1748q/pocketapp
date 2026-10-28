@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { transactionWhere } from "@/lib/record-filters";
 import { transactionFiltersSchema } from "@/lib/transaction-filters";
 import { getCurrentSession } from "@/lib/session";
 import { getDb } from "@/lib/db";
@@ -19,18 +19,8 @@ export async function GET(request: Request) {
     if (!query.success) return privateJson({ error: "พารามิเตอร์ไม่ถูกต้อง" }, 400);
     const db = getDb();
     const userId = session.user.id;
-    const { cursor, search, startDate, endDate, type, categoryId } = query.data;
-    const where: Prisma.TransactionWhereInput = {
-      userId,
-      ...(search ? { description: { contains: search.replace(/[\\%_]/g, "\\$&"), mode: "insensitive" } } : {}),
-      ...(type ? { type } : {}),
-      ...(categoryId ? { categoryId } : {}),
-      // These are Thai business dates stored as SQL DATE, not UTC instants.
-      ...(startDate || endDate ? { date: {
-        ...(startDate ? { gte: new Date(`${startDate}T00:00:00.000Z`) } : {}),
-        ...(endDate ? { lte: new Date(`${endDate}T00:00:00.000Z`) } : {}),
-      } } : {}),
-    };
+    const { cursor } = query.data;
+    const where = transactionWhere(userId, query.data);
     if (cursor && !await db.transaction.findFirst({ where: { ...where, id: cursor }, select: { id: true } })) {
       return privateJson({ error: "ไม่พบรายการ" }, 404);
     }
