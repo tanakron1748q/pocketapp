@@ -127,7 +127,7 @@ export function TransactionsPanel() {
             if ("type" in changed) form.setFieldsValue({ categoryId: undefined });
           }}>
           <TransactionFields categories={categories} />
-          <Button type="primary" htmlType="submit" loading={saving} disabled={saving || favoriteBusy} block size="large">{saving ? "กำลังบันทึก…" : "บันทึกรายการ"}</Button>
+          <Button type="primary" htmlType="submit" aria-label={saving ? "กำลังบันทึก…" : "บันทึกรายการ"} loading={saving} disabled={saving || favoriteBusy} block size="large">{saving ? "กำลังบันทึก…" : "บันทึกรายการ"}</Button>
           <Button className="mt-3" block disabled={saving || favoriteBusy} onClick={() => {
             form.resetFields();
             form.setFieldsValue({ type: "EXPENSE", date: todayInThailand() });
