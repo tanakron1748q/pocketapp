@@ -67,7 +67,7 @@ export function TransactionEditor({ id, categories, onClose, onSaved }: {
         <p className="mb-4 text-sm text-slate-600">แก้ไขรายละเอียดได้ โดยคงประเภทรายการเดิม</p>
         {saveError && <Alert className="mb-4" showIcon type="error" title={saveError} />}
         <Form form={form} name="edit-transaction" layout="vertical" disabled={saving} onFinish={save} noValidate>
-          <TransactionFields categories={categories} lockType />
+          <TransactionFields categories={categories} lockType originalCategoryId={record.category.id} />
         </Form>
       </>}
     </Modal>

@@ -2,6 +2,9 @@ import "server-only";
 
 import { getDb } from "./db";
 import type { TransactionType } from "./finance";
+import type { Prisma } from "@/generated/prisma/client";
+
+export const categorySelect = { id: true, name: true, type: true, archived: true } as const;
 
 const starters: { starterKey: string; name: string; type: TransactionType }[] = [
   { starterKey: "salary", name: "เงินเดือน", type: "INCOME" },
@@ -21,6 +24,17 @@ export async function getPersonalCategories(userId: string) {
   await db.category.createMany({ data: starters.map((category) => ({ ...category, userId })), skipDuplicates: true });
   return db.category.findMany({
     where: { userId }, orderBy: [{ type: "asc" }, { createdAt: "asc" }, { starterKey: "asc" }],
-    select: { id: true, name: true, type: true },
+    select: categorySelect,
   });
+}
+
+// Hold the category against archive/rename until the financial write commits.
+// An existing record may retain its archived category, but cannot switch to one.
+export async function lockAvailableCategory(tx: Prisma.TransactionClient, userId: string, type: TransactionType, id: string, currentId = "") {
+  const rows = await tx.$queryRaw<{ id: string }[]>`
+    SELECT "id" FROM "categories"
+    WHERE "id" = ${id} AND "userId" = ${userId} AND "type"::text = ${type}
+      AND (NOT "archived" OR "id" = ${currentId}) FOR SHARE
+  `;
+  return rows.length > 0;
 }

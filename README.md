@@ -54,3 +54,5 @@ pnpm test:e2e
 ขอบเขตที่ตกลงไว้: [docs/product-scope.md](docs/product-scope.md)
 
 Spec สำหรับพัฒนา: [Pocketapp v1 — Issue #1](https://github.com/tanakron1748q/pocketapp/issues/1) ([สำเนาใน repository](docs/specs/pocketapp-v1.md))
+
+การเพิ่ม เปลี่ยนชื่อ และเก็บหมวดหมู่: [docs/categories.md](docs/categories.md)

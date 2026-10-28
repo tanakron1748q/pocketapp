@@ -2,9 +2,10 @@ import "server-only";
 
 import type { Prisma, Transaction as StoredTransaction } from "@/generated/prisma/client";
 import { getDb } from "./db";
+import { categorySelect, lockAvailableCategory } from "./categories";
 import { parseSatang, satangToAmount, type EditableTransactionDraft } from "./finance";
 
-export const transactionInclude = { category: { select: { id: true, name: true, type: true } } } as const;
+export const transactionInclude = { category: { select: categorySelect } } as const;
 type RecordWithCategory = Prisma.TransactionGetPayload<{ include: typeof transactionInclude }>;
 
 export function serializeTransaction(record: RecordWithCategory) {
@@ -39,9 +40,7 @@ export async function getOwnedTransaction(userId: string, id: string) {
 export async function editOwnedTransaction(userId: string, id: string, input: EditableTransactionDraft) {
   return getDb().$transaction(async (tx) => {
     const current = await lockOwnedTransaction(tx, userId, id);
-    const category = await tx.category.findFirst({
-      where: { id: input.categoryId, userId, type: current.type }, select: { id: true },
-    });
+    const category = await lockAvailableCategory(tx, userId, current.type, input.categoryId, current.categoryId);
     if (!category) throw new TransactionRuleError("กรุณาเลือกหมวดหมู่ของคุณที่ตรงกับประเภท", 422, { categoryId: ["หมวดหมู่ไม่ถูกต้อง"] });
     const updated = await tx.transaction.update({
       where: { id, userId },

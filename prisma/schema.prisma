@@ -83,6 +83,7 @@ model Category {
   type         TransactionType
   name         String
   starterKey   String?
+  archived     Boolean         @default(false)
   createdAt    DateTime        @default(now()) @db.Timestamptz(3)
   transactions Transaction[]
 

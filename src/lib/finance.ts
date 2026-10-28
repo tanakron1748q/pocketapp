@@ -1,5 +1,5 @@
 export type TransactionType = "INCOME" | "EXPENSE";
-export type Category = { id: string; type: TransactionType; name: string };
+export type Category = { id: string; type: TransactionType; name: string; archived: boolean };
 export type Transaction = {
   id: string;
   type: TransactionType;
