@@ -9,13 +9,14 @@ import {
 
 import { applyFieldErrors, readJson, RequestError } from "@/lib/private-request";
 import { transactionFilterParams, type TransactionFilters as Filters } from "@/lib/transaction-filters";
+import { CsvExportButton } from "./csv-export-button";
 import { TransactionFilters } from "./transaction-filters";
 import { FavoriteEntries } from "./favorite-entries";
 import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
 import { RefundManager } from "./refund-manager";
-import { ExpenseSummaryPanel } from "./expense-summary-panel";
+import { DashboardPanel } from "./dashboard-panel";
 import { CategoryManager } from "./category-manager";
 
 export function TransactionsPanel() {
@@ -120,7 +121,7 @@ export function TransactionsPanel() {
 
   return (
     <>
-    <ExpenseSummaryPanel revision={summaryRevision} />
+    <DashboardPanel revision={summaryRevision} />
     <div className="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <section className="min-w-0 rounded-xl border border-slate-200 p-5 sm:p-6" aria-labelledby="entry-heading">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -166,6 +167,7 @@ export function TransactionsPanel() {
           setNextCursor(null);
           void loadPage();
         }} />
+        <CsvExportButton getFilters={() => activeFilters.current} disabled={saving || listLoading || listError} />
         {notice && <Alert className="mb-4" showIcon type="success" title={notice} />}
         {listError && <Alert className="mb-4" type="error" showIcon title="โหลดรายการไม่สำเร็จ กดโหลดรายการใหม่เพื่อลองอีกครั้ง" />}
         {records.length === 0 && !listError && !listLoading && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-slate-600">{filtered ? "ไม่พบรายการที่ตรงกับตัวกรอง ลองเปลี่ยนเงื่อนไขหรือล้างตัวกรอง" : "ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย"}</p>}

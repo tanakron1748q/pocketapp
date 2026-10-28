@@ -62,3 +62,11 @@ Spec สำหรับพัฒนา: [Pocketapp v1 — Issue #1](https://gith
 การเพิ่ม เปลี่ยนชื่อ และเก็บหมวดหมู่: [docs/categories.md](docs/categories.md)
 
 การบันทึก แก้ไข และลบเงินคืนจากรายจ่าย พร้อมรายจ่ายสุทธิในเดือนที่ได้รับจริง: [docs/refunds.md](docs/refunds.md)
+
+การตั้งงบรายเดือน ค่าตั้งต้นต่อเดือนถัดไป การปรับเฉพาะเดือน และงบคงเหลือจากรายจ่ายสุทธิ: [docs/budgets.md](docs/budgets.md)
+
+การดาวน์โหลดรายการตามตัวกรองเป็น CSV พร้อมเงินคืนและการอ้างอิงรายจ่ายต้นทาง: [docs/csv-export.md](docs/csv-export.md)
+
+ภาพรวมรายเดือน รายรับ รายจ่ายสุทธิ เงินเหลือ กราฟหมวด งบ และรายการล่าสุด: [docs/dashboard.md](docs/dashboard.md)
+
+การเปรียบเทียบเดือนด้วยช่วงวันที่ที่เทียบกันได้ พร้อมรองรับเดือนสั้น/ยาวและยอดติดลบ: [docs/monthly-comparisons.md](docs/monthly-comparisons.md)

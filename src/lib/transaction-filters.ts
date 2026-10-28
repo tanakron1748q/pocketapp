@@ -3,7 +3,7 @@ import { isBusinessDate } from "./finance";
 
 const businessDate = z.string().refine(isBusinessDate, "วันที่ไม่ถูกต้อง");
 
-// Shared query contract for transaction history and future CSV export.
+// Shared query contract for transaction history and CSV export.
 export const transactionFiltersSchema = z.strictObject({
   search: z.string().trim().max(1000).optional(),
   startDate: businessDate.optional(),

@@ -1,8 +1,14 @@
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { setTimeout } from "node:timers/promises";
 
 // Always create a disposable database. Never read a developer's .env credentials.
+const clockDirectory = mkdtempSync(join(tmpdir(), "pocketapp-test-clock-"));
+const clockFile = join(clockDirectory, "now");
+writeFileSync(clockFile, "");
 const container = `pocketapp-auth-test-${randomUUID()}`;
 function run(command, args, env = process.env) {
   const result = spawnSync(command, args, { stdio: "inherit", env });
@@ -15,6 +21,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
     child?.kill(signal);
     spawnSync("docker", ["rm", "-f", container], { stdio: "ignore" });
+    rmSync(clockDirectory, { recursive: true, force: true });
     process.exit(1);
   });
 }
@@ -34,6 +41,7 @@ try {
   const url = `postgresql://pocketapp_test:local-test-only@127.0.0.1:${port}/pocketapp_test`;
   const env = {
     ...process.env,
+    POCKETAPP_TEST_CLOCK_FILE: clockFile,
     DATABASE_URL: url,
     DATABASE_URL_UNPOOLED: url,
     BETTER_AUTH_URL: `http://localhost:${process.env.TEST_PORT ?? "3100"}`,
@@ -53,5 +61,6 @@ try {
   console.error(error.message);
   process.exitCode = 1;
 } finally {
+  rmSync(clockDirectory, { recursive: true, force: true });
   spawnSync("docker", ["rm", "-f", container], { stdio: "ignore" });
 }

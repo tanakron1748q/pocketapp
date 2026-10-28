@@ -21,6 +21,7 @@ model User {
   transactions  Transaction[]
   favoriteEntries FavoriteEntry[]
   refunds       Refund[]
+  budgets       BudgetSetting[]
 
   @@map("users")
 }
@@ -88,6 +89,7 @@ model Category {
   archived     Boolean         @default(false)
   createdAt    DateTime        @default(now()) @db.Timestamptz(3)
   transactions Transaction[]
+  budgets      BudgetSetting[]
   favoriteEntries FavoriteEntry[]
 
   @@unique([userId, starterKey])
@@ -152,4 +154,28 @@ model Refund {
   @@index([expenseId, userId, expenseType])
   @@index([userId, date])
   @@map("refunds")
+}
+
+// Effective-dated defaults and exact-month overrides never carry unused money.
+enum BudgetScope {
+  DEFAULT
+  MONTH
+}
+
+model BudgetSetting {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId   String
+  categoryType TransactionType @default(EXPENSE)
+  category     Category        @relation(fields: [categoryId, userId, categoryType], references: [id, userId, type], onDelete: NoAction, onUpdate: NoAction)
+  month        DateTime        @db.Date
+  scope        BudgetScope
+  amountSatang Int
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@unique([userId, categoryId, month, scope])
+  @@index([categoryId, userId, categoryType])
+  @@map("budget_settings")
 }
