@@ -14,6 +14,8 @@ import { FavoriteEntries } from "./favorite-entries";
 import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
+import { RefundManager } from "./refund-manager";
+import { ExpenseSummaryPanel } from "./expense-summary-panel";
 import { CategoryManager } from "./category-manager";
 
 export function TransactionsPanel() {
@@ -37,9 +39,12 @@ export function TransactionsPanel() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteRecord, setDeleteRecord] = useState<Transaction | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [refundExpenseId, setRefundExpenseId] = useState<string | null>(null);
+  const [summaryRevision, setSummaryRevision] = useState(0);
   const [managingCategories, setManagingCategories] = useState(false);
 
   function categoryChanged(category: Category) {
+    setSummaryRevision((value) => value + 1);
     setCategories((previous) => previous.some((item) => item.id === category.id)
       ? previous.map((item) => item.id === category.id ? category : item) : [...previous, category]);
     setRecords((previous) => previous.map((record) => record.category.id === category.id ? { ...record, category } : record));
@@ -71,6 +76,7 @@ export function TransactionsPanel() {
 
   async function loadPage(cursor?: string) {
     const requestId = ++listRequest.current;
+    setSummaryRevision((value) => value + 1);
     setListLoading(true);
     setListError(false);
     try {
@@ -113,6 +119,8 @@ export function TransactionsPanel() {
   );
 
   return (
+    <>
+    <ExpenseSummaryPanel revision={summaryRevision} />
     <div className="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <section className="min-w-0 rounded-xl border border-slate-200 p-5 sm:p-6" aria-labelledby="entry-heading">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -172,8 +180,9 @@ export function TransactionsPanel() {
               </div>
               <p className="mt-1 text-sm text-slate-600">{record.type === "INCOME" ? "รายรับ" : "รายจ่าย"} · <time dateTime={record.date}>{displayDate(record.date)}</time></p>
               {record.description && <p className="mt-2 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{record.description}</p>}
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <Button disabled={saving || listLoading} onClick={() => { setNotice(null); setEditId(record.id); }}>แก้ไข</Button>
+                {record.type === "EXPENSE" && <Button disabled={saving || listLoading} onClick={() => setRefundExpenseId(record.id)}>เงินคืน / ประวัติ</Button>}
                 <Button danger disabled={saving || listLoading} onClick={() => { setNotice(null); setDeleteRecord(record); }}>ลบ</Button>
               </div>
             </li>
@@ -197,7 +206,9 @@ export function TransactionsPanel() {
           setNotice("ลบรายการแล้ว");
           void loadPage();
         }} />}
+      {refundExpenseId && <RefundManager key={refundExpenseId} expenseId={refundExpenseId} onClose={() => setRefundExpenseId(null)} onChanged={() => { void loadPage(); }} />}
       {managingCategories && <CategoryManager categories={categories} onChanged={categoryChanged} onClose={() => setManagingCategories(false)} />}
     </div>
+    </>
   );
 }

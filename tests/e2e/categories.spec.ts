@@ -3,7 +3,7 @@ import { authenticate, createTestDatabase } from "./support";
 import type { Category, Transaction, TransactionType } from "../../src/lib/finance";
 
 const db = createTestDatabase();
-const origin = "http://localhost:3100";
+const origin = process.env.BETTER_AUTH_URL ?? "http://localhost:3100";
 const headers = { Origin: origin };
 const users = [
   { id: "category-a", name: "ผู้จัดหมวด ก", email: "category-a@example.test", emailVerified: true },

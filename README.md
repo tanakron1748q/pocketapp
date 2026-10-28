@@ -60,3 +60,5 @@ pnpm test:e2e
 Spec สำหรับพัฒนา: [Pocketapp v1 — Issue #1](https://github.com/tanakron1748q/pocketapp/issues/1) ([สำเนาใน repository](docs/specs/pocketapp-v1.md))
 
 การเพิ่ม เปลี่ยนชื่อ และเก็บหมวดหมู่: [docs/categories.md](docs/categories.md)
+
+การบันทึก แก้ไข และลบเงินคืนจากรายจ่าย พร้อมรายจ่ายสุทธิในเดือนที่ได้รับจริง: [docs/refunds.md](docs/refunds.md)
