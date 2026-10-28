@@ -3,7 +3,7 @@ import { authenticate, createTestDatabase } from "./support";
 import type { Category, FavoriteDraft, FavoriteEntry } from "../../src/lib/finance";
 
 const db = createTestDatabase();
-const origin = "http://localhost:3100";
+const origin = process.env.BETTER_AUTH_URL ?? "http://localhost:3100";
 const users = [
   { id: "favorites-a", name: "รายการโปรด ก", email: "favorites-a@example.test", emailVerified: true },
   { id: "favorites-b", name: "รายการโปรด ข", email: "favorites-b@example.test", emailVerified: true },
@@ -26,7 +26,7 @@ async function fill(page: Page) {
   await page.getByLabel("จำนวนเงิน (บาท)").fill("45.67");
   await page.getByLabel("หมวดหมู่", { exact: true }).click();
   await page.getByRole("option", { name: "อาหารและเครื่องดื่ม", exact: true }).click();
-  await page.getByLabel("วันที่ (เวลาไทย)").fill("2020-02-29");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2020-02-29");
   await page.getByLabel("คำอธิบาย (ไม่บังคับ)").fill("หวานน้อย");
 }
 
@@ -124,12 +124,12 @@ test("browser stores details from a past draft, prefills today, cancels and edit
   expect(await records(context)).toEqual([]);
   await page.reload();
   await expect(shortcut).toBeVisible();
-  await page.getByLabel("วันที่ (เวลาไทย)").fill("2020-01-01");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2020-01-01");
   await shortcut.click();
   await expect(page.getByText("เติมร่างจากรายการโปรดแล้ว", { exact: false })).toBeVisible();
   await expect(page.getByLabel("จำนวนเงิน (บาท)")).toHaveValue("45.67");
   await expect(page.getByLabel("คำอธิบาย (ไม่บังคับ)")).toHaveValue("หวานน้อย");
-  await expect(page.getByLabel("วันที่ (เวลาไทย)")).toHaveValue(today);
+  await expect(page.getByLabel("วันที่ (เวลาไทย)", { exact: true })).toHaveValue(today);
   expect(await records(context)).toEqual([]);
   await page.getByRole("button", { name: "ยกเลิกร่าง", exact: true }).click();
   await expect(page.getByLabel("จำนวนเงิน (บาท)")).toHaveValue("");
@@ -137,7 +137,7 @@ test("browser stores details from a past draft, prefills today, cancels and edit
   await shortcut.click();
   await page.getByLabel("จำนวนเงิน (บาท)").fill("50.01");
   await page.getByLabel("คำอธิบาย (ไม่บังคับ)").fill("เพิ่มช็อต");
-  await page.getByLabel("วันที่ (เวลาไทย)").fill("2020-02-29");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2020-02-29");
   await page.screenshot({ path: testInfo.outputPath("favorite-draft.png"), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
