@@ -16,6 +16,8 @@ export type TransactionDraft = {
   date: string;
   description?: string;
 };
+export type FavoriteDraft = Omit<TransactionDraft, "date"> & { name: string };
+export type FavoriteEntry = Omit<Transaction, "date"> & { name: string };
 export type EditableTransactionDraft = Omit<TransactionDraft, "type">;
 
 export const MAX_AMOUNT_SATANG = 2_147_483_647;
