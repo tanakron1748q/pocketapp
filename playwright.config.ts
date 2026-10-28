@@ -10,14 +10,14 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: "list",
-  use: { baseURL: "http://localhost:3100", trace: "retain-on-failure" },
+  use: { baseURL: (process.env.BETTER_AUTH_URL ?? "http://localhost:3100"), trace: "retain-on-failure" },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: "pnpm build && pnpm start --port 3100",
-    url: "http://localhost:3100",
+    command: `pnpm build && pnpm start --port ${process.env.TEST_PORT ?? "3100"}`,
+    url: (process.env.BETTER_AUTH_URL ?? "http://localhost:3100"),
     reuseExistingServer: false,
     timeout: 180_000,
   },

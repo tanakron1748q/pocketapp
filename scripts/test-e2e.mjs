@@ -36,7 +36,7 @@ try {
     ...process.env,
     DATABASE_URL: url,
     DATABASE_URL_UNPOOLED: url,
-    BETTER_AUTH_URL: "http://localhost:3100",
+    BETTER_AUTH_URL: `http://localhost:${process.env.TEST_PORT ?? "3100"}`,
     BETTER_AUTH_SECRET: "test-only-secret-for-disposable-local-database-1234567890",
     GOOGLE_CLIENT_ID: "test-client.apps.googleusercontent.com",
     GOOGLE_CLIENT_SECRET: "test-only-not-a-google-credential",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Form, Spin } from "antd";
 import {
   displayAmount, displayDate,
@@ -8,12 +8,17 @@ import {
 } from "@/lib/finance";
 
 import { applyFieldErrors, readJson, RequestError } from "@/lib/private-request";
+import { transactionFilterParams, type TransactionFilters as Filters } from "@/lib/transaction-filters";
+import { TransactionFilters } from "./transaction-filters";
 import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
 import { CategoryManager } from "./category-manager";
 
 export function TransactionsPanel() {
+  const activeFilters = useRef<Filters>({});
+  const listRequest = useRef(0);
+  const [filtered, setFiltered] = useState(false);
   const [form] = Form.useForm<TransactionDraft>();
   const [categories, setCategories] = useState<Category[]>([]);
   const [records, setRecords] = useState<Transaction[]>([]);
@@ -62,16 +67,19 @@ export function TransactionsPanel() {
   }, [attempt, form]);
 
   async function loadPage(cursor?: string) {
+    const requestId = ++listRequest.current;
     setListLoading(true);
     setListError(false);
     try {
-      const page = await readJson<TransactionPage>(`/api/transactions${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
+      const params = transactionFilterParams(activeFilters.current, cursor).toString();
+      const page = await readJson<TransactionPage>(`/api/transactions${params ? `?${params}` : ""}`);
+      if (requestId !== listRequest.current) return;
       setRecords((previous) => cursor
         ? [...previous, ...page.transactions.filter((item) => !previous.some((record) => record.id === item.id))]
         : page.transactions);
       setNextCursor(page.nextCursor);
-    } catch { setListError(true); }
-    finally { setListLoading(false); }
+    } catch { if (requestId === listRequest.current) setListError(true); }
+    finally { if (requestId === listRequest.current) setListLoading(false); }
   }
 
   async function save(values: TransactionDraft) {
@@ -124,9 +132,16 @@ export function TransactionsPanel() {
           <Button onClick={() => loadPage()} disabled={saving || listLoading}>โหลดรายการใหม่</Button>
         </div>
         <p className="mb-4 text-sm text-slate-600">เรียงวันที่ล่าสุดก่อน หากวันเดียวกันแสดงรายการที่บันทึกล่าสุดก่อน</p>
+        <TransactionFilters categories={categories} disabled={saving || listLoading} onApply={(filters) => {
+          activeFilters.current = filters;
+          setFiltered(Object.values(filters).some(Boolean));
+          setRecords([]);
+          setNextCursor(null);
+          void loadPage();
+        }} />
         {notice && <Alert className="mb-4" showIcon type="success" title={notice} />}
         {listError && <Alert className="mb-4" type="error" showIcon title="โหลดรายการไม่สำเร็จ กดโหลดรายการใหม่เพื่อลองอีกครั้ง" />}
-        {records.length === 0 && !listError && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-slate-600">ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย</p>}
+        {records.length === 0 && !listError && !listLoading && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-slate-600">{filtered ? "ไม่พบรายการที่ตรงกับตัวกรอง ลองเปลี่ยนเงื่อนไขหรือล้างตัวกรอง" : "ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย"}</p>}
         <ol className="space-y-3" aria-label="รายการรายรับและรายจ่าย">
           {records.map((record) => (
             <li key={record.id} className="rounded-xl border border-slate-200 p-4">
