@@ -87,7 +87,7 @@ export function RefundManager({ expenseId, onClose, onChanged }: { expenseId: st
         ]}><Input type="date" max={todayInThailand()} /></Form.Item>
         <Form.Item name="description" label="คำอธิบายเงินคืน (ไม่บังคับ)" rules={[{ max: 1000, message: "คำอธิบายต้องไม่เกิน 1,000 ตัวอักษร" }]}><Input.TextArea rows={2} maxLength={1000} /></Form.Item>
         <div className="flex flex-wrap gap-2">
-          <Button type="primary" htmlType="submit" loading={busy}>บันทึกเงินคืน</Button>
+          <Button type="primary" htmlType="submit" aria-label={busy ? "กำลังบันทึกเงินคืน…" : "บันทึกเงินคืน"} loading={busy} disabled={busy}>บันทึกเงินคืน</Button>
           {editing && <Button onClick={reset}>ยกเลิกการแก้ไขเงินคืน</Button>}
         </div>
       </Form>

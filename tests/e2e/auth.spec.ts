@@ -3,7 +3,7 @@ import { test, expect, type BrowserContext } from "@playwright/test";
 import { authenticate, createTestDatabase } from "./support";
 
 const db = createTestDatabase();
-const origin = "http://localhost:3100";
+const origin = (process.env.BETTER_AUTH_URL ?? "http://localhost:3100");
 const users = [
   { id: "test-google-a", name: "ผู้ใช้ ก", email: "alice@example.test" },
   { id: "test-google-b", name: "ผู้ใช้ ข", email: "bob@example.test" },

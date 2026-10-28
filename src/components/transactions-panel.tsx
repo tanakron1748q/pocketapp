@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Form, Spin } from "antd";
 import {
-  displayAmount, displayDate,
+  displayAmount, displayDate, todayInThailand,
   type Category, type Transaction, type TransactionDraft, type TransactionPage,
 } from "@/lib/finance";
 
 import { applyFieldErrors, readJson, RequestError } from "@/lib/private-request";
+import { transactionFilterParams, type TransactionFilters as Filters } from "@/lib/transaction-filters";
+import { TransactionFilters } from "./transaction-filters";
+import { FavoriteEntries } from "./favorite-entries";
 import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
@@ -17,6 +20,9 @@ import { BudgetsPanel } from "./budgets-panel";
 import { CategoryManager } from "./category-manager";
 
 export function TransactionsPanel() {
+  const activeFilters = useRef<Filters>({});
+  const listRequest = useRef(0);
+  const [filtered, setFiltered] = useState(false);
   const [form] = Form.useForm<TransactionDraft>();
   const [categories, setCategories] = useState<Category[]>([]);
   const [records, setRecords] = useState<Transaction[]>([]);
@@ -25,6 +31,8 @@ export function TransactionsPanel() {
   const [initialError, setInitialError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [favoriteBusy, setFavoriteBusy] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [listLoading, setListLoading] = useState(false);
@@ -68,17 +76,20 @@ export function TransactionsPanel() {
   }, [attempt, form]);
 
   async function loadPage(cursor?: string) {
+    const requestId = ++listRequest.current;
     setSummaryRevision((value) => value + 1);
     setListLoading(true);
     setListError(false);
     try {
-      const page = await readJson<TransactionPage>(`/api/transactions${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`);
+      const params = transactionFilterParams(activeFilters.current, cursor).toString();
+      const page = await readJson<TransactionPage>(`/api/transactions${params ? `?${params}` : ""}`);
+      if (requestId !== listRequest.current) return;
       setRecords((previous) => cursor
         ? [...previous, ...page.transactions.filter((item) => !previous.some((record) => record.id === item.id))]
         : page.transactions);
       setNextCursor(page.nextCursor);
-    } catch { setListError(true); }
-    finally { setListLoading(false); }
+    } catch { if (requestId === listRequest.current) setListError(true); }
+    finally { if (requestId === listRequest.current) setListLoading(false); }
   }
 
   async function save(values: TransactionDraft) {
@@ -90,6 +101,7 @@ export function TransactionsPanel() {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values),
       });
       setSaved(true);
+      setPrefilled(false);
       form.setFieldsValue({ amount: "", description: "" });
       // A refresh failure must not turn a successful save into a retryable submission.
       await loadPage();
@@ -115,17 +127,32 @@ export function TransactionsPanel() {
       <section className="min-w-0 rounded-xl border border-slate-200 p-5 sm:p-6" aria-labelledby="entry-heading">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <h2 id="entry-heading" className="text-xl font-semibold">เพิ่มรายการ</h2>
-          <Button onClick={() => setManagingCategories(true)} disabled={saving}>จัดการหมวดหมู่</Button>
+          <Button onClick={() => setManagingCategories(true)} disabled={saving || favoriteBusy}>จัดการหมวดหมู่</Button>
         </div>
+        <FavoriteEntries form={form} disabled={saving} onBusy={setFavoriteBusy} onApply={(entry) => {
+          form.resetFields();
+          form.setFieldsValue({ type: entry.type, amount: entry.amount, categoryId: entry.category.archived ? undefined : entry.category.id, description: entry.description ?? "", date: todayInThailand() });
+          setSaved(false);
+          setSaveError(entry.category.archived ? "หมวดของรายการโปรดนี้เก็บแล้ว กรุณาเลือกหมวดที่ยังใช้งานก่อนบันทึก" : null);
+          setPrefilled(true);
+        }} />
+        {prefilled && <Alert className="mb-4" showIcon type="info" title="เติมร่างจากรายการโปรดแล้ว ยังไม่ได้บันทึก กรุณาตรวจวันที่ จำนวนเงิน และรายละเอียด" />}
         {saved && <Alert className="mb-4" showIcon type="success" title="บันทึกรายการแล้ว" />}
         {saveError && <Alert className="mb-4" showIcon type="error" title={saveError} />}
-        <Form form={form} name="transaction" layout="vertical" onFinish={save} disabled={saving} noValidate
+        <Form form={form} name="transaction" layout="vertical" onFinish={save} disabled={saving || favoriteBusy} noValidate
           onValuesChange={(changed) => {
             setSaved(false);
             if ("type" in changed) form.setFieldsValue({ categoryId: undefined });
           }}>
           <TransactionFields categories={categories} />
-          <Button type="primary" htmlType="submit" loading={saving} block size="large">{saving ? "กำลังบันทึก…" : "บันทึกรายการ"}</Button>
+          <Button type="primary" htmlType="submit" aria-label={saving ? "กำลังบันทึก…" : "บันทึกรายการ"} loading={saving} disabled={saving || favoriteBusy} block size="large">{saving ? "กำลังบันทึก…" : "บันทึกรายการ"}</Button>
+          <Button className="mt-3" block disabled={saving || favoriteBusy} onClick={() => {
+            form.resetFields();
+            form.setFieldsValue({ type: "EXPENSE", date: todayInThailand() });
+            setPrefilled(false);
+            setSaveError(null);
+            setSaved(false);
+          }}>ยกเลิกร่าง</Button>
         </Form>
       </section>
       <section className="min-w-0" aria-labelledby="history-heading" aria-busy={listLoading}>
@@ -134,9 +161,16 @@ export function TransactionsPanel() {
           <Button onClick={() => loadPage()} disabled={saving || listLoading}>โหลดรายการใหม่</Button>
         </div>
         <p className="mb-4 text-sm text-slate-600">เรียงวันที่ล่าสุดก่อน หากวันเดียวกันแสดงรายการที่บันทึกล่าสุดก่อน</p>
+        <TransactionFilters categories={categories} disabled={saving || listLoading} onApply={(filters) => {
+          activeFilters.current = filters;
+          setFiltered(Object.values(filters).some(Boolean));
+          setRecords([]);
+          setNextCursor(null);
+          void loadPage();
+        }} />
         {notice && <Alert className="mb-4" showIcon type="success" title={notice} />}
         {listError && <Alert className="mb-4" type="error" showIcon title="โหลดรายการไม่สำเร็จ กดโหลดรายการใหม่เพื่อลองอีกครั้ง" />}
-        {records.length === 0 && !listError && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-slate-600">ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย</p>}
+        {records.length === 0 && !listError && !listLoading && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-slate-600">{filtered ? "ไม่พบรายการที่ตรงกับตัวกรอง ลองเปลี่ยนเงื่อนไขหรือล้างตัวกรอง" : "ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย"}</p>}
         <ol className="space-y-3" aria-label="รายการรายรับและรายจ่าย">
           {records.map((record) => (
             <li key={record.id} className="rounded-xl border border-slate-200 p-4">

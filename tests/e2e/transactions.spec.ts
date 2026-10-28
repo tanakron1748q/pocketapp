@@ -3,7 +3,7 @@ import { authenticate, createTestDatabase } from "./support";
 import type { Category, Transaction, TransactionDraft } from "../../src/lib/finance";
 
 const db = createTestDatabase();
-const origin = "http://localhost:3100";
+const origin = (process.env.BETTER_AUTH_URL ?? "http://localhost:3100");
 const users = [
   { id: "finance-a", name: "ผู้บันทึก ก", email: "finance-a@example.test", emailVerified: true },
   { id: "finance-b", name: "ผู้บันทึก ข", email: "finance-b@example.test", emailVerified: true },
@@ -167,8 +167,8 @@ test("browser adds expense/income, clears mismatched category, reloads and shows
   await authenticate(context, db, users[0].id);
   const today = (await (await context.request.get("/api/categories")).json()).today;
   await page.goto("/dashboard");
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
-  await expect(page.getByLabel("วันที่ (เวลาไทย)")).toHaveValue(today);
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("วันที่ (เวลาไทย)", { exact: true })).toHaveValue(today);
   await fillExpense(page, "123.45", "ข้าวกลางวัน 🍚");
   await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
   await expect(page.getByText("บันทึกรายการแล้ว", { exact: true })).toBeVisible();
@@ -182,7 +182,7 @@ test("browser adds expense/income, clears mismatched category, reloads and shows
   await expect(page.getByRole("option", { name: "อาหารและเครื่องดื่ม", exact: true })).toHaveCount(0);
   await page.getByRole("option", { name: "เงินเดือน", exact: true }).click();
   await page.getByLabel("จำนวนเงิน (บาท)").fill("0.10");
-  await page.getByLabel("วันที่ (เวลาไทย)").fill("2020-02-29");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2020-02-29");
   await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
   await expect(history.getByText("+0.10 บาท")).toBeVisible();
   await page.reload();
@@ -195,7 +195,7 @@ test("browser adds expense/income, clears mismatched category, reloads and shows
     await authenticate(device, db, users[0].id);
     const anotherPage = await device.newPage();
     await anotherPage.goto("/dashboard");
-    await expect(anotherPage.getByLabel("วันที่ (เวลาไทย)")).toHaveValue(today);
+    await expect(anotherPage.getByLabel("วันที่ (เวลาไทย)", { exact: true })).toHaveValue(today);
     await expect(anotherPage.getByText("ข้าวกลางวัน 🍚")).toBeVisible();
     await expect(anotherPage.getByText("+0.10 บาท")).toBeVisible();
   } finally { await device.close(); }
@@ -213,7 +213,7 @@ test("browser rejects invalid amounts and future dates without sending a mutatio
     await expect(page.getByText("กรอกจำนวนเงินมากกว่า 0 ถึง 21,474,836.47 บาท ทศนิยมไม่เกิน 2 ตำแหน่ง", { exact: true })).toBeVisible();
   }
   await page.getByLabel("จำนวนเงิน (บาท)").fill("1.00");
-  await page.getByLabel("วันที่ (เวลาไทย)").fill("2999-01-01");
+  await page.getByLabel("วันที่ (เวลาไทย)", { exact: true }).fill("2999-01-01");
   await page.getByRole("button", { name: "บันทึกรายการ", exact: true }).click();
   await expect(page.getByText("บันทึกได้เฉพาะวันที่ถูกต้อง วันนี้หรือย้อนหลัง ตามเวลาไทย", { exact: true })).toBeVisible();
   expect(mutations).toHaveLength(0);
@@ -253,8 +253,8 @@ test("initial load error offers retry instead of claiming the account is empty",
   });
   await page.goto("/dashboard");
   await expect(page.getByText("โหลดข้อมูลไม่สำเร็จ กรุณาลองอีกครั้ง", { exact: true })).toBeVisible();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toHaveCount(0);
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toHaveCount(0);
   fail = false;
   await page.getByRole("button", { name: "ลองโหลดอีกครั้ง", exact: true }).click();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
 });

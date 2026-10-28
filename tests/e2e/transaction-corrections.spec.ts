@@ -3,7 +3,7 @@ import { authenticate, createTestDatabase } from "./support";
 import type { Category, EditableTransactionDraft, Transaction, TransactionType } from "../../src/lib/finance";
 
 const db = createTestDatabase();
-const origin = "http://localhost:3100";
+const origin = (process.env.BETTER_AUTH_URL ?? "http://localhost:3100");
 const users = [
   { id: "correction-a", name: "ผู้แก้ไข ก", email: "correction-a@example.test", emailVerified: true },
   { id: "correction-b", name: "ผู้แก้ไข ข", email: "correction-b@example.test", emailVerified: true },
@@ -245,7 +245,7 @@ test("canceling delete sends no request and confirming removes the record after 
   await expect(history(page).locator("li")).toHaveCount(0);
   expect((await context.request.get(url)).status()).toBe(404);
   await page.reload();
-  await expect(page.getByText("ยังไม่มีรายการ", { exact: false })).toBeVisible();
+  await expect(page.getByText("ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย", { exact: true })).toBeVisible();
 });
 
 test("failed edit/delete retains the record and draft; pending actions prevent repeated submissions", async ({ context, page }) => {

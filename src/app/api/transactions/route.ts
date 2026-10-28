@@ -1,4 +1,5 @@
-import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
+import { transactionFiltersSchema } from "@/lib/transaction-filters";
 import { getCurrentSession } from "@/lib/session";
 import { getDb } from "@/lib/db";
 import { mutationOriginError, privateJson, readValidatedJson } from "@/lib/api-response";
@@ -14,17 +15,27 @@ export async function GET(request: Request) {
   try {
     const session = await getCurrentSession();
     if (!session) return privateJson({ error: "กรุณาเข้าสู่ระบบ" }, 401);
-    const query = z.strictObject({ cursor: z.string().min(1).max(100).optional() })
-      .safeParse(Object.fromEntries(new URL(request.url).searchParams));
+    const query = transactionFiltersSchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
     if (!query.success) return privateJson({ error: "พารามิเตอร์ไม่ถูกต้อง" }, 400);
     const db = getDb();
     const userId = session.user.id;
-    const { cursor } = query.data;
-    if (cursor && !await db.transaction.findFirst({ where: { id: cursor, userId }, select: { id: true } })) {
+    const { cursor, search, startDate, endDate, type, categoryId } = query.data;
+    const where: Prisma.TransactionWhereInput = {
+      userId,
+      ...(search ? { description: { contains: search.replace(/[\\%_]/g, "\\$&"), mode: "insensitive" } } : {}),
+      ...(type ? { type } : {}),
+      ...(categoryId ? { categoryId } : {}),
+      // These are Thai business dates stored as SQL DATE, not UTC instants.
+      ...(startDate || endDate ? { date: {
+        ...(startDate ? { gte: new Date(`${startDate}T00:00:00.000Z`) } : {}),
+        ...(endDate ? { lte: new Date(`${endDate}T00:00:00.000Z`) } : {}),
+      } } : {}),
+    };
+    if (cursor && !await db.transaction.findFirst({ where: { ...where, id: cursor }, select: { id: true } })) {
       return privateJson({ error: "ไม่พบรายการ" }, 404);
     }
     const records = await db.transaction.findMany({
-      where: { userId }, include,
+      where, include,
       orderBy: [{ date: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       take: 21, ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });

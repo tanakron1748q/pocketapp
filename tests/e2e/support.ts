@@ -17,6 +17,6 @@ export async function authenticate(context: BrowserContext, db: PrismaClient, us
   await db.session.create({ data: { id: randomUUID(), token, userId, expiresAt } });
   const signature = createHmac("sha256", process.env.BETTER_AUTH_SECRET!).update(token).digest("base64");
   const value = encodeURIComponent(`${token}.${signature}`);
-  await context.addCookies([{ name: "better-auth.session_token", value, url: "http://localhost:3100", httpOnly: true, sameSite: "Lax" }]);
+  await context.addCookies([{ name: "better-auth.session_token", value, url: (process.env.BETTER_AUTH_URL ?? "http://localhost:3100"), httpOnly: true, sameSite: "Lax" }]);
   return `better-auth.session_token=${value}`;
 }
