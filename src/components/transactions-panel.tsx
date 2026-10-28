@@ -9,6 +9,7 @@ import {
 
 import { applyFieldErrors, readJson, RequestError } from "@/lib/private-request";
 import { transactionFilterParams, type TransactionFilters as Filters } from "@/lib/transaction-filters";
+import { CsvExportButton } from "./csv-export-button";
 import { TransactionFilters } from "./transaction-filters";
 import { FavoriteEntries } from "./favorite-entries";
 import { TransactionFields } from "./transaction-fields";
@@ -168,6 +169,7 @@ export function TransactionsPanel() {
           setNextCursor(null);
           void loadPage();
         }} />
+        <CsvExportButton getFilters={() => activeFilters.current} disabled={saving || listLoading || listError} />
         {notice && <Alert className="mb-4" showIcon type="success" title={notice} />}
         {listError && <Alert className="mb-4" type="error" showIcon title="โหลดรายการไม่สำเร็จ กดโหลดรายการใหม่เพื่อลองอีกครั้ง" />}
         {records.length === 0 && !listError && !listLoading && <p className="rounded-xl border border-dashed border-slate-300 p-6 text-slate-600">{filtered ? "ไม่พบรายการที่ตรงกับตัวกรอง ลองเปลี่ยนเงื่อนไขหรือล้างตัวกรอง" : "ยังไม่มีรายการ เริ่มบันทึกรายรับหรือรายจ่ายแรกของคุณได้เลย"}</p>}
