@@ -19,6 +19,7 @@ model User {
   accounts      Account[]
   categories    Category[]
   transactions  Transaction[]
+  refunds       Refund[]
 
   @@map("users")
 }
@@ -105,8 +106,30 @@ model Transaction {
   category     Category        @relation(fields: [categoryId, userId, type], references: [id, userId, type], onDelete: NoAction, onUpdate: NoAction)
   createdAt    DateTime        @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime        @updatedAt @db.Timestamptz(3)
+  refunds      Refund[]
+
+  @@unique([id, userId, type])
 
   @@index([userId, date(sort: Desc), createdAt(sort: Desc), id(sort: Desc)])
   @@index([categoryId, userId, type])
   @@map("transactions")
+}
+
+// Ownership and EXPENSE-only references are enforced by the composite FK and SQL CHECK.
+model Refund {
+  id           String          @id @default(cuid())
+  userId       String
+  expenseId    String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenseType  TransactionType @default(EXPENSE)
+  expense      Transaction     @relation(fields: [expenseId, userId, expenseType], references: [id, userId, type], onDelete: NoAction, onUpdate: NoAction)
+  amountSatang Int
+  date         DateTime        @db.Date
+  description  String?
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @db.Timestamptz(3)
+
+  @@index([expenseId, userId, expenseType])
+  @@index([userId, date])
+  @@map("refunds")
 }

@@ -30,8 +30,10 @@ export function parseSatang(value: string): number | null {
   return satang > 0 && satang <= MAX_AMOUNT_SATANG ? satang : null;
 }
 
-export function satangToAmount(value: number) {
-  return `${Math.floor(value / 100)}.${String(value % 100).padStart(2, "0")}`;
+export function satangToAmount(value: number | bigint) {
+  const integer = BigInt(value);
+  const absolute = integer < BigInt(0) ? -integer : integer;
+  return `${integer < BigInt(0) ? "-" : ""}${absolute / BigInt(100)}.${String(absolute % BigInt(100)).padStart(2, "0")}`;
 }
 
 export function displayAmount(amount: string) {
@@ -57,3 +59,11 @@ export function displayDate(value: string) {
   const [year, month, day] = value.split("-");
   return `${day}/${month}/${year}`;
 }
+
+export type RefundDraft = Pick<TransactionDraft, "amount" | "date" | "description">;
+export type Refund = Omit<RefundDraft, "description"> & { id: string; expenseId: string; description: string | null };
+export type RefundHistory = { transaction: Transaction; refunds: Refund[]; refunded: string; remaining: string };
+export type ExpenseSummary = {
+  month: string; expense: string; refunded: string; netExpense: string;
+  categories: { id: string; name: string; expense: string; refunded: string; netExpense: string }[];
+};
