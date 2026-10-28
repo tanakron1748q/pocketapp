@@ -3,7 +3,7 @@
 import { Form, Input, Radio, Select } from "antd";
 import { AMOUNT_ERROR, isBusinessDate, parseSatang, todayInThailand, type Category, type TransactionDraft } from "@/lib/finance";
 
-export function TransactionFields({ categories, lockType = false }: { categories: Category[]; lockType?: boolean }) {
+export function TransactionFields({ categories, lockType = false, originalCategoryId }: { categories: Category[]; lockType?: boolean; originalCategoryId?: string }) {
   const form = Form.useFormInstance<TransactionDraft>();
   const type = Form.useWatch("type", form) ?? "EXPENSE";
   return (
@@ -18,7 +18,9 @@ export function TransactionFields({ categories, lockType = false }: { categories
         <Input inputMode="decimal" placeholder="0.00" maxLength={32} autoComplete="off" />
       </Form.Item>
       <Form.Item name="categoryId" label="หมวดหมู่" rules={[{ required: true, message: "กรุณาเลือกหมวดหมู่" }]}>
-        <Select placeholder="เลือกหมวดหมู่" virtual={false} options={categories.filter((category) => category.type === type).map((category) => ({ value: category.id, label: category.name }))} />
+        <Select placeholder="เลือกหมวดหมู่" virtual={false} options={categories
+          .filter((category) => category.type === type && (!category.archived || category.id === originalCategoryId))
+          .map((category) => ({ value: category.id, label: `${category.name}${category.archived ? " (เก็บแล้ว)" : ""}` }))} />
       </Form.Item>
       <Form.Item name="date" label="วันที่ (เวลาไทย)" rules={[
         { required: true, message: "กรุณาเลือกวันที่" },

@@ -27,9 +27,9 @@
 
 ทุก endpoint ใช้ session cookie ของผู้ใช้และตอบ `Cache-Control: private, no-store` ไม่รับ `userId` สำหรับกำหนดเจ้าของข้อมูล
 
-`GET /api/categories` ส่ง `{ categories: [{ id, name, type }], today: "YYYY-MM-DD" }` โดยสร้างหมวดตั้งต้นที่ยังไม่มีให้เฉพาะผู้ใช้คนนั้น
+`GET /api/categories` ส่ง `{ categories: [{ id, name, type, archived }], today: "YYYY-MM-DD" }` โดยสร้างหมวดตั้งต้นที่ยังไม่มีให้เฉพาะผู้ใช้คนนั้น
 
-`GET /api/transactions` ส่ง `{ transactions, nextCursor }` รายการแต่ละตัวมี `id`, `type`, `amount` (ข้อความบาทสองตำแหน่ง), `date`, `description`, `category: { id, name, type }` หากมีหน้าถัดไป เรียก `GET /api/transactions?cursor=LAST_ID` โดย cursor ต้องเป็นรายการของผู้ใช้คนนั้น
+`GET /api/transactions` ส่ง `{ transactions, nextCursor }` รายการแต่ละตัวมี `id`, `type`, `amount` (ข้อความบาทสองตำแหน่ง), `date`, `description`, `category: { id, name, type, archived }` หากมีหน้าถัดไป เรียก `GET /api/transactions?cursor=LAST_ID` โดย cursor ต้องเป็นรายการของผู้ใช้คนนั้น
 
 `POST /api/transactions` ต้องส่ง JSON พร้อม `Origin` ที่ตรงกับ `BETTER_AUTH_URL`:
 
@@ -94,7 +94,7 @@
 
 ตรวจแก้/ลบหลัง deploy ด้วย: เปิดรายการจากบัญชี A แก้จำนวนเงิน/วันที่/หมวด/คำอธิบายแล้ว reload อีกอุปกรณ์ จากนั้นยกเลิกหน้าต่างลบหนึ่งครั้งก่อนยืนยันลบ ตรวจว่าข้อมูลบัญชี B ยังอยู่ และส่ง HTTP ด้วย ID ของ B จาก session A ต้องได้ 404
 
-ขอบเขตนี้ยังไม่มีหมวดที่ผู้ใช้สร้างเอง งบ เงินคืน รายการโปรด หรือยอดสรุป Dashboard ซึ่งอยู่ใน ticket ถัดไป
+ขอบเขตนี้ยังไม่มีงบ เงินคืน รายการโปรด หรือยอดสรุป Dashboard ซึ่งอยู่ใน ticket ถัดไป
 
 ## ค้นหาและกรองรายการ — issue #6
 
@@ -105,3 +105,6 @@
 ทุกคำขอยังคงจำกัดด้วย session User เสมอ หมวดของบัญชีอื่นให้ผลว่าง และ cursor ที่ไม่อยู่ในผลกรองหรือเป็นของบัญชีอื่นให้ 404 ไม่มีการส่งข้อมูลทุกบัญชีให้ browser กรองเอง
 
 ชุดทดสอบ `transaction-filters.spec.ts` ครอบคลุมตัวกรองเดี่ยว/ร่วม ขอบเขตเดือนและ leap day, pagination, literal search, no results/reset, การกู้คืนเมื่อโหลดล้มเหลว และ account isolation ทั้ง desktop/mobile โดย browser ใช้ timezone ต่างจากไทย หากพอร์ตทดสอบ 3100 ถูกใช้โดย worktree อื่น รัน `TEST_PORT=3106 pnpm test:e2e` ได้
+
+การจัดการหมวดส่วนตัวและกติกาหมวดที่เก็บแล้ว: [คู่มือ ticket #5](categories.md)
+

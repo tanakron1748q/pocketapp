@@ -5,7 +5,8 @@ import { getDb } from "@/lib/db";
 import { mutationOriginError, privateJson, readValidatedJson } from "@/lib/api-response";
 import { parseSatang } from "@/lib/finance";
 import { transactionSchema } from "@/lib/transaction-schema";
-import { transactionInclude as include, serializeTransaction as serialize } from "@/lib/transactions";
+import { transactionInclude as include, serializeTransaction as serialize, TransactionRuleError } from "@/lib/transactions";
+import { lockAvailableCategory } from "@/lib/categories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,18 +57,20 @@ export async function POST(request: Request) {
     const { amount, description, date, categoryId, type } = result.data;
     const db = getDb();
     const userId = session.user.id;
-    const category = await db.category.findFirst({ where: { id: categoryId, userId, type }, select: { id: true } });
-    if (!category) {
-      return privateJson({ error: "กรุณาเลือกหมวดหมู่ของคุณที่ตรงกับประเภท", fields: { categoryId: ["หมวดหมู่ไม่ถูกต้อง"] } }, 422);
-    }
-    const transaction = await db.transaction.create({
-      data: {
-        userId, categoryId, type, amountSatang: parseSatang(amount)!,
-        date: new Date(`${date}T00:00:00.000Z`), description: description || null,
-      }, include,
+    const transaction = await db.$transaction(async (tx) => {
+      if (!await lockAvailableCategory(tx, userId, type, categoryId)) {
+        throw new TransactionRuleError("กรุณาเลือกหมวดหมู่ที่ยังใช้งานของคุณและตรงกับประเภท", 422, { categoryId: ["หมวดหมู่ไม่ถูกต้องหรือเก็บแล้ว"] });
+      }
+      return tx.transaction.create({
+        data: {
+          userId, categoryId, type, amountSatang: parseSatang(amount)!,
+          date: new Date(`${date}T00:00:00.000Z`), description: description || null,
+        }, include,
+      });
     });
     return privateJson({ transaction: serialize(transaction) }, 201);
-  } catch {
+  } catch (error) {
+    if (error instanceof TransactionRuleError) return privateJson({ error: error.message, fields: error.fields }, error.status);
     return privateJson({ error: "บันทึกไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง" }, 503);
   }
 }

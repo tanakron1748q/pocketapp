@@ -13,6 +13,7 @@ import { TransactionFilters } from "./transaction-filters";
 import { TransactionFields } from "./transaction-fields";
 import { TransactionEditor } from "./transaction-editor";
 import { TransactionDeleteDialog } from "./transaction-delete-dialog";
+import { CategoryManager } from "./category-manager";
 
 export function TransactionsPanel() {
   const activeFilters = useRef<Filters>({});
@@ -33,6 +34,16 @@ export function TransactionsPanel() {
   const [editId, setEditId] = useState<string | null>(null);
   const [deleteRecord, setDeleteRecord] = useState<Transaction | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [managingCategories, setManagingCategories] = useState(false);
+
+  function categoryChanged(category: Category) {
+    setCategories((previous) => previous.some((item) => item.id === category.id)
+      ? previous.map((item) => item.id === category.id ? category : item) : [...previous, category]);
+    setRecords((previous) => previous.map((record) => record.category.id === category.id ? { ...record, category } : record));
+    if (category.archived && form.getFieldValue("categoryId") === category.id) {
+      form.setFieldsValue({ categoryId: undefined });
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -100,7 +111,10 @@ export function TransactionsPanel() {
   return (
     <div className="mt-8 grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <section className="min-w-0 rounded-xl border border-slate-200 p-5 sm:p-6" aria-labelledby="entry-heading">
-        <h2 id="entry-heading" className="mb-5 text-xl font-semibold">เพิ่มรายการ</h2>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 id="entry-heading" className="text-xl font-semibold">เพิ่มรายการ</h2>
+          <Button onClick={() => setManagingCategories(true)} disabled={saving}>จัดการหมวดหมู่</Button>
+        </div>
         {saved && <Alert className="mb-4" showIcon type="success" title="บันทึกรายการแล้ว" />}
         {saveError && <Alert className="mb-4" showIcon type="error" title={saveError} />}
         <Form form={form} name="transaction" layout="vertical" onFinish={save} disabled={saving} noValidate
@@ -164,6 +178,7 @@ export function TransactionsPanel() {
           setNotice("ลบรายการแล้ว");
           void loadPage();
         }} />}
+      {managingCategories && <CategoryManager categories={categories} onChanged={categoryChanged} onClose={() => setManagingCategories(false)} />}
     </div>
   );
 }
