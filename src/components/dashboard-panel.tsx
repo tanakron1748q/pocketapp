@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Alert, Button, Input } from "antd";
 import { displayAmount, displayDate, todayInThailand, type DashboardReport } from "@/lib/finance";
 import { readJson } from "@/lib/private-request";
+import { MonthlyComparisonPanel } from "./monthly-comparison-panel";
 import { BudgetsPanel } from "./budgets-panel";
 
 const ExpenseCategoryChart = dynamic(() => import("./expense-category-chart"), {
@@ -48,6 +49,7 @@ export function DashboardPanel({ revision }: { revision: number }) {
               <p className={`mt-2 break-words text-lg font-semibold ${data.monthlyNet.startsWith("-") ? "text-red-700" : "text-slate-900"}`}>{displayAmount(data.monthlyNet)}</p>
             </section>
           </div>
+          <MonthlyComparisonPanel comparison={data.comparison} />
           <section className="mt-5 min-w-0" aria-label="กราฟรายจ่ายสุทธิตามหมวด">
             <h3 className="font-semibold">รายจ่ายสุทธิตามหมวด</h3>
             <p className="my-2 text-sm text-slate-600">หน่วยบาท · เงินคืนลดหมวดต้นทางในเดือนที่ได้รับ ค่าติดลบแสดงซ้ายศูนย์ ค่าบวกแสดงขวาศูนย์</p>

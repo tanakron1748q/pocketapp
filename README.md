@@ -68,3 +68,5 @@ Spec สำหรับพัฒนา: [Pocketapp v1 — Issue #1](https://gith
 การดาวน์โหลดรายการตามตัวกรองเป็น CSV พร้อมเงินคืนและการอ้างอิงรายจ่ายต้นทาง: [docs/csv-export.md](docs/csv-export.md)
 
 ภาพรวมรายเดือน รายรับ รายจ่ายสุทธิ เงินเหลือ กราฟหมวด งบ และรายการล่าสุด: [docs/dashboard.md](docs/dashboard.md)
+
+การเปรียบเทียบเดือนด้วยช่วงวันที่ที่เทียบกันได้ พร้อมรองรับเดือนสั้น/ยาวและยอดติดลบ: [docs/monthly-comparisons.md](docs/monthly-comparisons.md)

@@ -3,6 +3,8 @@ import { test, expect, type BrowserContext } from "@playwright/test";
 import { authenticate, createTestDatabase } from "./support";
 import type { Category, DashboardReport, Transaction } from "../../src/lib/finance";
 
+test.use({ timezoneId: "America/Los_Angeles" });
+
 const db = createTestDatabase();
 const headers = { Origin: process.env.BETTER_AUTH_URL ?? "http://localhost:3100" };
 const users = ["comparison-a", "comparison-b"];
@@ -131,4 +133,79 @@ test("zero and negative baselines use exact signed amount changes, and compariso
     expect((await report(context, "2024-05")).comparison).toBeNull();
     expect((await report(context, "0001-01")).comparison).toBeNull();
   } finally { await other.close(); }
+});
+
+test("browser shows both elapsed date ranges and exact totals, then compares a completed month in full", async ({ context, page }, testInfo) => {
+  await seedElapsed(context);
+  await page.clock.setFixedTime(new Date("2024-03-15T12:00:00+07:00"));
+  await page.goto("/dashboard");
+  const overview = page.getByRole("region", { name: "ภาพรวมรายเดือน", exact: true });
+  const comparison = overview.getByRole("region", { name: "เปรียบเทียบกับเดือนก่อน", exact: true });
+  await expect(comparison).toContainText("เทียบช่วงวันที่ผ่านไป");
+  await expect(comparison).toContainText("ช่วงเดือนที่เลือก: 01/03/2024 – 15/03/2024");
+  await expect(comparison).toContainText("ช่วงเดือนก่อน: 01/02/2024 – 15/02/2024");
+  const income = comparison.getByRole("region", { name: "เปรียบเทียบรายรับ", exact: true });
+  await expect(income).toContainText("เดือนที่เลือก 10.03 บาท");
+  await expect(income).toContainText("เดือนก่อน 21.03 บาท");
+  await expect(income).toContainText("ลดลง 11.00 บาท");
+  const expense = comparison.getByRole("region", { name: "เปรียบเทียบรายจ่ายสุทธิ", exact: true });
+  await expect(expense).toContainText("เดือนที่เลือก 1.02 บาท");
+  await expect(expense).toContainText("เดือนก่อน 8.02 บาท");
+  await expect(expense).toContainText("ลดลง 7.00 บาท");
+  await expect(comparison.getByRole("region", { name: "เปรียบเทียบเงินเหลือ", exact: true })).toContainText("ลดลง 4.00 บาท");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await comparison.screenshot({ path: testInfo.outputPath("monthly-comparison.png") });
+  await overview.getByLabel("เดือน (เวลาไทย)").fill("2024-02");
+  await expect(comparison).toContainText("เทียบเต็มเดือน");
+  await expect(comparison).toContainText("ช่วงเดือนที่เลือก: 01/02/2024 – 29/02/2024");
+  await expect(comparison).toContainText("ช่วงเดือนก่อน: 01/01/2024 – 31/01/2024");
+  await expect(income).toContainText("เดือนที่เลือก 1,021.03 บาท");
+});
+
+test("browser explains shorter months, zero bases, negative nets and future-month unavailability without invalid numbers", async ({ context, page }) => {
+  const { income, expense } = await setup(context);
+  const source = await entry(context, expense, "2024-01-01", "100.00");
+  await entry(context, income, "2024-03-01", "5.01");
+  await entry(context, expense, "2024-03-31", "3.01");
+  await refund(context, source.id, "2024-02-05", "10.01");
+  await refund(context, source.id, "2024-03-05", "20.01");
+  await serverTime("2024-03-31T12:00:00+07:00");
+  await page.clock.setFixedTime(new Date("2024-03-31T12:00:00+07:00"));
+  await page.goto("/dashboard");
+  const comparison = page.getByRole("region", { name: "เปรียบเทียบกับเดือนก่อน", exact: true });
+  await expect(comparison).toContainText("ช่วงเดือนก่อน: 01/02/2024 – 29/02/2024");
+  await expect(comparison).toContainText("เดือนก่อนสั้นกว่า จึงใช้ถึงวันสุดท้ายของเดือนก่อน");
+  const incomeCard = comparison.getByRole("region", { name: "เปรียบเทียบรายรับ", exact: true });
+  await expect(incomeCard).toContainText("เดือนก่อน 0.00 บาท");
+  await expect(incomeCard).toContainText("เพิ่มขึ้น 5.01 บาท");
+  await expect(incomeCard).toContainText("ฐานเดือนก่อนเป็นศูนย์");
+  const expenseCard = comparison.getByRole("region", { name: "เปรียบเทียบรายจ่ายสุทธิ", exact: true });
+  await expect(expenseCard).toContainText("เดือนที่เลือก -17.00 บาท");
+  await expect(expenseCard).toContainText("เดือนก่อน -10.01 บาท");
+  await expect(expenseCard).toContainText("ลดลง 6.99 บาท");
+  await expect(expenseCard).toContainText("ฐานเดือนก่อนติดลบ");
+  await expect(comparison).not.toContainText(/NaN|Infinity/);
+  await page.getByLabel("เดือน (เวลาไทย)").fill("2024-04");
+  await expect(comparison).toContainText("ยังไม่มีช่วงเปรียบเทียบสำหรับเดือนนี้");
+  await page.getByLabel("เดือน (เวลาไทย)").fill("2024-01");
+  await expect(comparison.getByRole("region", { name: "เปรียบเทียบรายรับ", exact: true })).toContainText("ไม่เปลี่ยนแปลง (0.00 บาท)");
+});
+
+test("browser and HTTP agree at Thailand's new-year boundary even when the browser timezone is still in December", async ({ context, page }) => {
+  const { income } = await setup(context);
+  await entry(context, income, "2024-12-01", "1.01");
+  await entry(context, income, "2024-12-02", "100.00");
+  await entry(context, income, "2025-01-01", "2.02");
+  await serverTime("2025-01-01T00:30:00+07:00");
+  await page.clock.setFixedTime(new Date("2025-01-01T00:30:00+07:00"));
+  await page.goto("/dashboard");
+  const comparison = page.getByRole("region", { name: "เปรียบเทียบกับเดือนก่อน", exact: true });
+  await expect(page.getByLabel("เดือน (เวลาไทย)")).toHaveValue("2025-01");
+  await expect(comparison).toContainText("ช่วงเดือนที่เลือก: 01/01/2025 – 01/01/2025");
+  await expect(comparison).toContainText("ช่วงเดือนก่อน: 01/12/2024 – 01/12/2024");
+  const incomeCard = comparison.getByRole("region", { name: "เปรียบเทียบรายรับ", exact: true });
+  await expect(incomeCard).toContainText("เดือนที่เลือก 2.02 บาท");
+  await expect(incomeCard).toContainText("เดือนก่อน 1.01 บาท");
+  await expect(incomeCard).toContainText("เพิ่มขึ้น 1.01 บาท");
+  expect((await report(context, "2025-01")).comparison!.change.income).toBe("1.01");
 });

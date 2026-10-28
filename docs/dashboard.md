@@ -46,3 +46,5 @@
 - บัญชีอื่น เดือน/query ที่ปลอม และ URL เดิมหลังเปลี่ยนบัญชีไม่เปิดเผยข้อมูลหรือใช้ shared cache
 
 การตรวจ Google OAuth และระบบบน Neon/Vercel จริงยังต้องตั้งค่าตาม [auth-setup.md](auth-setup.md)
+
+การเทียบช่วงเดือนปัจจุบันกับเดือนก่อน และการเทียบเต็มเดือนย้อนหลัง พร้อมรูปแบบ `comparison` ใน API: [monthly-comparisons.md](monthly-comparisons.md)
