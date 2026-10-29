@@ -21,7 +21,9 @@ export async function DELETE(request: Request) {
     await clearDeletionCookie();
     const jar = await cookies();
     for (const cookie of jar.getAll()) {
-      if (/^(?:__Secure-)?better-auth\./.test(cookie.name)) jar.delete(cookie.name);
+      if (/^(?:__Secure-)?better-auth\./.test(cookie.name)) {
+        jar.set(cookie.name, "", { path: "/", httpOnly: true, sameSite: "lax", secure: process.env.BETTER_AUTH_URL!.startsWith("https:"), maxAge: 0 });
+      }
     }
     return privateJson({ deleted: true });
   } catch { return privateJson({ error: "ลบบัญชีไม่สำเร็จ กรุณาลองอีกครั้ง" }, 503); }

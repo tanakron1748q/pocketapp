@@ -1,10 +1,13 @@
 import { getCurrentSession } from "@/lib/session";
 import { clearDeletionCookie, completeDeletionVerification } from "@/lib/account-deletion";
+import { isAuthConfigured } from "@/lib/auth";
+import { privateJson } from "@/lib/api-response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  if (!isAuthConfigured()) return privateJson({ error: "ระบบเข้าสู่ระบบยังไม่พร้อมใช้งาน" }, 503);
   let verified = false;
   try {
     const session = await getCurrentSession();
