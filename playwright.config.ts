@@ -16,7 +16,7 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: `pnpm build && node --import ./tests/e2e/server-clock.mjs node_modules/next/dist/bin/next start --port ${process.env.TEST_PORT ?? "3100"}`,
+    command: `pnpm build && node --import ./tests/e2e/server-clock.mjs --import ./tests/e2e/google-provider.mjs node_modules/next/dist/bin/next start --port ${process.env.TEST_PORT ?? "3100"}`,
     url: (process.env.BETTER_AUTH_URL ?? "http://localhost:3100"),
     reuseExistingServer: false,
     timeout: 180_000,

@@ -95,7 +95,7 @@ Fixtures ไม่ได้พิสูจน์การแลก authorization
 
 `/dashboard` ตรวจ session ใน server page ทุก request และ client ตรวจ session ซ้ำก่อนแสดงตัวตน `/api/me` ตรวจ session ของ request โดยตรง ไม่เชื่อ `userId` จาก query string ไม่มี shared user cache และปิด Better Auth cookie cache เพื่อให้ revoked session ถูกปฏิเสธทันที
 
-`/api/categories`, `/api/transactions` และ `/api/transactions/[id]` เรียก `getCurrentSession()` ภายในแต่ละ entry point และ scope ข้อมูลด้วย `session.user.id` เช่นกัน เมื่อเพิ่ม API/Server Action ใหม่ต้องใช้หลักเดียวกัน การซ่อนปุ่มหรือป้องกันที่ layout อย่างเดียวไม่เพียงพอ ดูขอบเขตการเพิ่ม/ดู/แก้ไข/ลบรายการใน [คู่มือรายการ](transactions.md) ส่วนการลบบัญชีอยู่ใน issue ถัดไป
+`/api/categories`, `/api/transactions` และ `/api/transactions/[id]` เรียก `getCurrentSession()` ภายในแต่ละ entry point และ scope ข้อมูลด้วย `session.user.id` เช่นกัน เมื่อเพิ่ม API/Server Action ใหม่ต้องใช้หลักเดียวกัน การซ่อนปุ่มหรือป้องกันที่ layout อย่างเดียวไม่เพียงพอ ดูขอบเขตการเพิ่ม/ดู/แก้ไข/ลบรายการใน [คู่มือรายการ](transactions.md) ส่วนการลบบัญชีและ callback เพิ่มเติมดู [คู่มือลบบัญชี](account-deletion.md)
 
 ## เอกสารอ้างอิง
 
