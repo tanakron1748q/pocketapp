@@ -72,3 +72,5 @@ Spec สำหรับพัฒนา: [Pocketapp v1 — Issue #1](https://gith
 การเปรียบเทียบเดือนด้วยช่วงวันที่ที่เทียบกันได้ พร้อมรองรับเดือนสั้น/ยาวและยอดติดลบ: [docs/monthly-comparisons.md](docs/monthly-comparisons.md)
 
 การยืนยัน Google ใหม่และลบบัญชีแอปพร้อมข้อมูลทุกอุปกรณ์: [docs/account-deletion.md](docs/account-deletion.md)
+
+ขั้นตอนและหลักฐานตรวจรับครบวงจร รวมส่วน cloud ที่ยังรอ deployment: [docs/release-acceptance.md](docs/release-acceptance.md)
