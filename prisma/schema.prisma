@@ -36,9 +36,24 @@ model Session {
   userAgent String?
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deletionVerification DeletionVerification?
 
   @@index([userId])
   @@map("sessions")
+}
+
+// Short-lived, single-use Google proof bound to one device's live session.
+model DeletionVerification {
+  id         String   @id
+  sessionId  String   @unique
+  session    Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  subject    String
+  verifier   String?
+  nonce      String
+  verifiedAt DateTime? @db.Timestamptz(3)
+  expiresAt  DateTime @db.Timestamptz(3)
+
+  @@map("deletion_verifications")
 }
 
 model Account {

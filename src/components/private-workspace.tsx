@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Alert, Button, Spin } from "antd";
 import { authClient } from "@/lib/auth-client";
 import { TransactionsPanel } from "./transactions-panel";
@@ -51,6 +52,7 @@ export function PrivateWorkspace() {
       <p className="mt-2 break-all text-slate-600">{data.user.email}</p>
       {failed && <Alert className="mt-4" type="error" showIcon title="ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง" />}
       <div className="mt-6 flex flex-wrap gap-3">
+        <Link href="/settings" className="self-center">ตั้งค่าบัญชี</Link>
         <Button onClick={() => leave(true)}>สลับบัญชี Google</Button>
         <Button onClick={() => leave(false)}>ออกจากระบบ</Button>
       </div>
