@@ -2,7 +2,7 @@
 
 วันที่ตรวจเตรียม: 29 ตุลาคม 2026 (Asia/Bangkok)
 
-สถานะ: **ยังไม่ผ่าน cloud acceptance** — ผู้ใช้ยืนยันว่ายังไม่มี deployment URL จึงยังไม่ได้ตรวจ Vercel/Neon จริง, Google สองบัญชี, physical mobile, การตื่นหลัง Neon suspend หรือ usage จริง ไม่มีการ deploy, เปิดบริการเสียเงิน หรือเปลี่ยนสถานะ issue จากงานนี้
+สถานะ: **ยังไม่ผ่าน cloud acceptance** — ผู้ใช้ยืนยันว่ายังไม่มี deployment URL จึงยังไม่ได้ตรวจ Vercel/Neon จริง, Google สองบัญชี, physical mobile, การตื่นหลัง Neon suspend หรือ usage จริง ไม่มีการ deploy หรือเปิดบริการเสียเงิน การปิด tickets ตามคำขอเจ้าของในขั้นตอนส่ง PR เป็นการปิดสถานะงาน ไม่ใช่หลักฐานว่า cloud/Google acceptance ผ่านแล้ว
 
 ## หลักฐานอัตโนมัติในเครื่อง
 
